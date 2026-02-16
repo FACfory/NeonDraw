@@ -2,746 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeonDraw - Dibujo Colaborativo en Tiempo Real</title>
-    <style>
-        /* =====================================================
-           RESET Y VARIABLES CSS
-        ===================================================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            /* Colores principales */
-            --bg-primary: #0a0a0f;
-            --bg-secondary: #12121a;
-            --bg-tertiary: #1a1a28;
-            
-            /* Colores neón */
-            --neon-cyan: #00d4ff;
-            --neon-magenta: #ff00ff;
-            --neon-green: #00ff88;
-            --neon-yellow: #ffff00;
-            --neon-pink: #ff0066;
-            
-            /* Colores de interfaz */
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --border-color: #2a2a3a;
-            
-            /* Sombras */
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-            --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
-            --glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
-        }
-
-        /* =====================================================
-           ESTILOS GLOBALES
-        ===================================================== */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-            color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        /* =====================================================
-           PANTALLA DE CARGA
-        ===================================================== */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
-
-        .loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-content {
-            text-align: center;
-        }
-
-        .logo-container {
-            margin-bottom: 30px;
-        }
-
-        .app-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            letter-spacing: 8px;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 30px rgba(0, 212, 255, 0.8),
-                         0 0 60px rgba(0, 212, 255, 0.4);
-            margin-bottom: 20px;
-        }
-
-        .app-title span {
-            color: var(--neon-green);
-            text-shadow: 0 0 30px rgba(0, 255, 136, 0.8),
-                         0 0 60px rgba(0, 255, 136, 0.4);
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid var(--bg-tertiary);
-            border-top: 4px solid var(--neon-cyan);
-            border-radius: 50%;
-            margin: 0 auto;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            margin-top: 20px;
-        }
-
-        /* =====================================================
-           CONTENEDOR PRINCIPAL
-        ===================================================== */
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        /* =====================================================
-           HEADER
-        ===================================================== */
-        .app-header {
-            background: var(--bg-secondary);
-            border-bottom: 2px solid var(--neon-cyan);
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--shadow-md);
-            position: relative;
-            z-index: 100;
-        }
-
-        .app-header::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, 
-                var(--neon-cyan) 0%, 
-                var(--neon-green) 50%, 
-                var(--neon-cyan) 100%);
-            box-shadow: 0 0 10px var(--neon-cyan);
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            letter-spacing: 3px;
-            color: var(--neon-cyan);
-            text-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-        }
-
-        .logo span {
-            color: var(--neon-green);
-            text-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
-        }
-
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green);
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .status-text {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .header-center {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-        }
-
-        .room-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .room-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--neon-cyan);
-            letter-spacing: 2px;
-        }
-
-        .room-input {
-            padding: 10px 15px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            width: 200px;
-            transition: all 0.3s ease;
-        }
-
-        .room-input:focus {
-            outline: none;
-            border-color: var(--neon-cyan);
-            box-shadow: var(--glow-cyan);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .users-online {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .user-icon {
-            width: 20px;
-            height: 20px;
-            color: var(--neon-cyan);
-        }
-
-        /* =====================================================
-           BOTONES
-        ===================================================== */
-        button {
-            cursor: pointer;
-            font-family: inherit;
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            padding: 10px 20px;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
-            color: var(--bg-primary);
-            font-weight: 600;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        }
-
-        .btn-secondary {
-            padding: 10px 20px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            font-weight: 600;
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: var(--glow-cyan);
-        }
-
-        .btn-secondary svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .btn-danger {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #ff0066, #cc0052);
-            color: white;
-            font-weight: 600;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
-        }
-
-        .btn-danger svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        /* =====================================================
-           CONTENIDO PRINCIPAL
-        ===================================================== */
-        .main-content {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* =====================================================
-           TOOLBAR LATERAL
-        ===================================================== */
-        .toolbar {
-            width: 300px;
-            background: var(--bg-secondary);
-            border-right: 2px solid var(--neon-cyan);
-            padding: 25px;
-            overflow-y: auto;
-            box-shadow: var(--shadow-md);
-            position: relative;
-        }
-
-        .toolbar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: -2px;
-            width: 2px;
-            height: 100%;
-            background: linear-gradient(180deg, 
-                var(--neon-cyan) 0%, 
-                var(--neon-green) 50%, 
-                var(--neon-cyan) 100%);
-            box-shadow: 0 0 10px var(--neon-cyan);
-        }
-
-        .toolbar-section {
-            margin-bottom: 30px;
-        }
-
-        .toolbar-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--neon-cyan);
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .tool-group {
-            margin-bottom: 25px;
-        }
-
-        .tool-label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* =====================================================
-           SELECTOR DE COLOR
-        ===================================================== */
-        .color-picker-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .color-input {
-            width: 60px;
-            height: 60px;
-            border: 3px solid var(--border-color);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .color-input:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: var(--glow-cyan);
-        }
-
-        .color-preview {
-            flex: 1;
-            height: 60px;
-            background: var(--neon-green);
-            border: 3px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .preset-colors {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .color-preset {
-            width: 100%;
-            aspect-ratio: 1;
-            border: 3px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .color-preset:hover {
-            transform: scale(1.1);
-            border-color: var(--text-primary);
-            box-shadow: 0 0 15px currentColor;
-        }
-
-        .color-preset.active {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 20px var(--neon-cyan);
-        }
-
-        /* =====================================================
-           SLIDER DE TAMAÑO
-        ===================================================== */
-        .slider {
-            width: 100%;
-            height: 8px;
-            background: var(--bg-tertiary);
-            border-radius: 5px;
-            outline: none;
-            margin-bottom: 15px;
-            -webkit-appearance: none;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--neon-cyan);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 10px var(--neon-cyan);
-            transition: all 0.3s ease;
-        }
-
-        .slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-            box-shadow: 0 0 20px var(--neon-cyan);
-        }
-
-        .slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: var(--neon-cyan);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 0 10px var(--neon-cyan);
-        }
-
-        .brush-preview {
-            width: 100%;
-            height: 80px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-
-        .brush-dot {
-            background: var(--neon-green);
-            border-radius: 50%;
-            width: 3px;
-            height: 3px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 10px var(--neon-green);
-        }
-
-        .value-display {
-            display: block;
-            text-align: center;
-            font-size: 1rem;
-            color: var(--neon-cyan);
-            font-weight: 600;
-        }
-
-        /* =====================================================
-           BOTONES DE MODO
-        ===================================================== */
-        .mode-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .mode-btn {
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .mode-btn svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        .mode-btn:hover {
-            border-color: var(--neon-cyan);
-            color: var(--text-primary);
-        }
-
-        .mode-btn.active {
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
-            color: var(--bg-primary);
-            border-color: transparent;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-        }
-
-        /* =====================================================
-           DECORACIÓN SIDEBAR
-        ===================================================== */
-        .sidebar-decoration {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 2px solid var(--border-color);
-        }
-
-        .neon-line {
-            height: 4px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                var(--neon-cyan) 50%, 
-                transparent 100%);
-            border-radius: 2px;
-            box-shadow: 0 0 10px var(--neon-cyan);
-            animation: neon-pulse 3s ease-in-out infinite;
-        }
-
-        @keyframes neon-pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        /* =====================================================
-           CANVAS
-        ===================================================== */
-        .canvas-container {
-            flex: 1;
-            position: relative;
-            background: var(--bg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        #drawing-canvas {
-            background: #ffffff;
-            box-shadow: var(--shadow-lg);
-            cursor: crosshair;
-            border-radius: 8px;
-            max-width: 95%;
-            max-height: 95%;
-        }
-
-        .canvas-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 10, 15, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: opacity 0.3s ease;
-        }
-
-        .canvas-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .overlay-content {
-            text-align: center;
-        }
-
-        .overlay-icon {
-            width: 80px;
-            height: 80px;
-            color: var(--neon-cyan);
-            margin-bottom: 20px;
-            opacity: 0.7;
-        }
-
-        .overlay-content h2 {
-            font-size: 1.8rem;
-            color: var(--text-primary);
-            margin-bottom: 15px;
-        }
-
-        .overlay-content p {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-        }
-
-        /* =====================================================
-           NOTIFICACIONES TOAST
-        ===================================================== */
-        .toast-container {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast {
-            padding: 15px 20px;
-            background: var(--bg-secondary);
-            border: 2px solid var(--neon-cyan);
-            border-radius: 8px;
-            color: var(--text-primary);
-            box-shadow: var(--shadow-md), var(--glow-cyan);
-            min-width: 300px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .toast.success {
-            border-color: var(--neon-green);
-            box-shadow: var(--shadow-md), var(--glow-green);
-        }
-
-        .toast.error {
-            border-color: var(--neon-pink);
-            box-shadow: var(--shadow-md), 0 0 20px rgba(255, 0, 102, 0.3);
-        }
-
-        .toast-message {
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-        @media (max-width: 1024px) {
-            .toolbar {
-                width: 250px;
-            }
-
-            .app-title {
-                font-size: 2.5rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .toolbar {
-                position: absolute;
-                left: -300px;
-                top: 0;
-                height: 100%;
-                z-index: 200;
-                transition: left 0.3s ease;
-            }
-
-            .toolbar.open {
-                left: 0;
-            }
-
-            .header-center {
-                display: none;
-            }
-
-            .app-title {
-                font-size: 1.5rem;
-                letter-spacing: 2px;
-            }
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NeonDraw v2.0 - Dibujo Colaborativo</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <!-- Pantalla de carga inicial -->
@@ -760,10 +23,15 @@
         <!-- Header superior -->
         <header class="app-header">
             <div class="header-left">
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </button>
                 <h1 class="logo">NEON<span>DRAW</span></h1>
                 <div class="connection-status">
-                    <span class="status-dot"></span>
-                    <span class="status-text">Conectado</span>
+                    <span class="status-dot" id="status-dot"></span>
+                    <span class="status-text" id="status-text">Desconectado</span>
                 </div>
             </div>
             
@@ -773,6 +41,7 @@
                     <input type="text" id="room-id" class="room-input" placeholder="Ingresa código de sala" maxlength="20">
                     <button id="join-room-btn" class="btn-primary">Unirse</button>
                     <button id="create-room-btn" class="btn-secondary">Crear Sala</button>
+                    <button id="leave-room-btn" class="btn-danger-outline" style="display: none;">Salir de Sala</button>
                 </div>
             </div>
 
@@ -786,10 +55,13 @@
             </div>
         </header>
 
+        <!-- Overlay del toolbar móvil -->
+        <div class="toolbar-overlay" id="toolbar-overlay"></div>
+
         <!-- Contenedor principal con sidebar y canvas -->
         <main class="main-content">
             <!-- Sidebar de herramientas -->
-            <aside class="toolbar">
+            <aside class="toolbar" id="toolbar">
                 <div class="toolbar-section">
                     <h3 class="toolbar-title">HERRAMIENTAS</h3>
                     
@@ -800,13 +72,14 @@
                             <input type="color" id="color-picker" class="color-input" value="#00ff88">
                             <div class="color-preview" id="color-preview"></div>
                         </div>
-                        <div class="preset-colors">
-                            <button class="color-preset" data-color="#00ff88" style="background: #00ff88;"></button>
-                            <button class="color-preset" data-color="#00d4ff" style="background: #00d4ff;"></button>
-                            <button class="color-preset" data-color="#ff00ff" style="background: #ff00ff;"></button>
-                            <button class="color-preset" data-color="#ffff00" style="background: #ffff00;"></button>
-                            <button class="color-preset" data-color="#ff0066" style="background: #ff0066;"></button>
-                            <button class="color-preset" data-color="#ffffff" style="background: #ffffff;"></button>
+                        <div class="preset-colors" id="preset-colors">
+                            <!-- Se llenarán dinámicamente con JavaScript -->
+                        </div>
+                        
+                        <!-- Paletas personalizadas -->
+                        <div class="custom-palettes">
+                            <label class="tool-label">Paletas</label>
+                            <div id="palettes-list"></div>
                         </div>
                     </div>
 
@@ -837,6 +110,67 @@
                                 Borrador
                             </button>
                         </div>
+                        
+                        <!-- Historial -->
+                        <div class="history-controls">
+                            <button id="undo-btn" class="history-btn" disabled>
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+                                </svg>
+                                Deshacer
+                            </button>
+                            <button id="redo-btn" class="history-btn" disabled>
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+                                </svg>
+                                Rehacer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Imagen de referencia -->
+                <div class="toolbar-section">
+                    <h3 class="toolbar-title">REFERENCIA</h3>
+                    
+                    <input type="file" id="reference-upload" class="reference-upload" accept="image/*">
+                    
+                    <button id="upload-reference-btn" class="reference-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                        </svg>
+                        Subir Imagen
+                    </button>
+                    
+                    <button id="load-url-reference-btn" class="reference-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                        </svg>
+                        Cargar por URL
+                    </button>
+                    
+                    <button id="gallery-reference-btn" class="reference-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
+                        </svg>
+                        Galería
+                    </button>
+                    
+                    <button id="clear-reference-btn" class="reference-btn" disabled>
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                        Quitar Referencia
+                    </button>
+                    
+                    <div class="reference-opacity-control">
+                        <label class="tool-label">Opacidad</label>
+                        <input type="range" id="reference-opacity" class="slider" min="0" max="100" value="50">
+                        <span id="reference-opacity-value" class="value-display">50%</span>
+                    </div>
+                    
+                    <div class="reference-presets" id="reference-presets">
+                        <!-- Referencias predeterminadas se generan con JS -->
                     </div>
                 </div>
 
@@ -866,7 +200,10 @@
 
             <!-- Canvas de dibujo -->
             <section class="canvas-container">
-                <canvas id="drawing-canvas"></canvas>
+                <div class="canvas-wrapper">
+                    <canvas id="reference-canvas"></canvas>
+                    <canvas id="drawing-canvas"></canvas>
+                </div>
                 <div class="canvas-overlay" id="canvas-overlay">
                     <div class="overlay-content">
                         <svg class="overlay-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -881,452 +218,46 @@
 
         <!-- Notificaciones toast -->
         <div id="toast-container" class="toast-container"></div>
+        
+        <!-- Modal para URL de imagen -->
+        <div id="url-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Cargar Imagen por URL</h2>
+                    <button class="modal-close" id="close-url-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label for="image-url-input">URL de la imagen:</label>
+                    <input type="text" id="image-url-input" class="modal-input" placeholder="https://ejemplo.com/imagen.jpg">
+                </div>
+                <div class="modal-footer">
+                    <button id="load-url-btn" class="btn-primary">Cargar</button>
+                    <button id="cancel-url-btn" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal para galería de imágenes -->
+        <div id="gallery-modal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2>Galería de Referencias</h2>
+                    <button class="modal-close" id="close-gallery-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="gallery-grid" class="gallery-grid">
+                        <!-- Se cargan dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts de Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
-    <script>
-        // =====================================================
-        // CONFIGURACIÓN DE FIREBASE
-        // =====================================================
-        // IMPORTANTE: Reemplaza estos valores con tu configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w",
-            authDomain: "neondraw-app-gem.firebaseapp.com",
-            databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
-            projectId: "neondraw-app-gem",
-            storageBucket: "neondraw-app-gem.firebasestorage.app",
-            messagingSenderId: "611346212206",
-            appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
-            measurementId: "G-E366ZD3J90"
-        };
-
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // =====================================================
-        // ESTADO DE LA APLICACIÓN
-        // =====================================================
-        const app = {
-            currentRoom: null,
-            userId: 'user-' + Math.random().toString(36).substr(2, 9),
-            isDrawing: false,
-            lastX: 0,
-            lastY: 0,
-            currentColor: '#00ff88',
-            brushSize: 3,
-            isEraser: false,
-            canvas: null,
-            ctx: null,
-            drawingListener: null
-        };
-
-        // =====================================================
-        // ELEMENTOS DEL DOM
-        // =====================================================
-        const elements = {
-            loadingScreen: document.getElementById('loading-screen'),
-            appContainer: document.getElementById('app'),
-            canvas: document.getElementById('drawing-canvas'),
-            canvasOverlay: document.getElementById('canvas-overlay'),
-            roomInput: document.getElementById('room-id'),
-            joinRoomBtn: document.getElementById('join-room-btn'),
-            createRoomBtn: document.getElementById('create-room-btn'),
-            clearCanvasBtn: document.getElementById('clear-canvas-btn'),
-            downloadBtn: document.getElementById('download-btn'),
-            colorPicker: document.getElementById('color-picker'),
-            colorPreview: document.getElementById('color-preview'),
-            brushSize: document.getElementById('brush-size'),
-            brushSizeValue: document.getElementById('brush-size-value'),
-            brushIndicator: document.getElementById('brush-indicator'),
-            drawModeBtn: document.getElementById('draw-mode'),
-            eraserModeBtn: document.getElementById('eraser-mode'),
-            userCount: document.getElementById('user-count'),
-            toastContainer: document.getElementById('toast-container')
-        };
-
-        // =====================================================
-        // INICIALIZACIÓN
-        // =====================================================
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                elements.loadingScreen.classList.add('hidden');
-                elements.appContainer.style.display = 'flex';
-                initializeCanvas();
-                setupEventListeners();
-            }, 1500);
-        });
-
-        // =====================================================
-        // CONFIGURACIÓN DEL CANVAS
-        // =====================================================
-        function initializeCanvas() {
-            app.canvas = elements.canvas;
-            app.ctx = app.canvas.getContext('2d');
-
-            // Configurar tamaño del canvas
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            // Configurar propiedades del contexto
-            app.ctx.lineCap = 'round';
-            app.ctx.lineJoin = 'round';
-        }
-
-        function resizeCanvas() {
-            const container = app.canvas.parentElement;
-            const rect = container.getBoundingClientRect();
-            
-            // Mantener aspecto 4:3
-            const maxWidth = rect.width * 0.95;
-            const maxHeight = rect.height * 0.95;
-            
-            let width = 1200;
-            let height = 800;
-            
-            if (width > maxWidth) {
-                width = maxWidth;
-                height = width * (3/4);
-            }
-            
-            if (height > maxHeight) {
-                height = maxHeight;
-                width = height * (4/3);
-            }
-            
-            app.canvas.width = width;
-            app.canvas.height = height;
-            
-            // Recargar dibujos si estamos en una sala
-            if (app.currentRoom) {
-                loadAllStrokes();
-            }
-        }
-
-        // =====================================================
-        // EVENT LISTENERS
-        // =====================================================
-        function setupEventListeners() {
-            // Botones de sala
-            elements.createRoomBtn.addEventListener('click', createRoom);
-            elements.joinRoomBtn.addEventListener('click', () => {
-                const roomId = elements.roomInput.value.trim();
-                if (roomId) {
-                    joinRoom(roomId);
-                } else {
-                    showToast('Ingresa un código de sala', 'error');
-                }
-            });
-
-            // Enter en el input de sala
-            elements.roomInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    elements.joinRoomBtn.click();
-                }
-            });
-
-            // Herramientas de dibujo
-            elements.colorPicker.addEventListener('input', (e) => {
-                updateColor(e.target.value);
-            });
-
-            document.querySelectorAll('.color-preset').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const color = e.currentTarget.dataset.color;
-                    updateColor(color);
-                    elements.colorPicker.value = color;
-                });
-            });
-
-            elements.brushSize.addEventListener('input', (e) => {
-                updateBrushSize(parseInt(e.target.value));
-            });
-
-            // Modos de dibujo
-            elements.drawModeBtn.addEventListener('click', () => setMode('draw'));
-            elements.eraserModeBtn.addEventListener('click', () => setMode('eraser'));
-
-            // Acciones
-            elements.clearCanvasBtn.addEventListener('click', clearCanvas);
-            elements.downloadBtn.addEventListener('click', downloadCanvas);
-
-            // Eventos del canvas
-            app.canvas.addEventListener('mousedown', startDrawing);
-            app.canvas.addEventListener('mousemove', draw);
-            app.canvas.addEventListener('mouseup', stopDrawing);
-            app.canvas.addEventListener('mouseout', stopDrawing);
-
-            // Touch events para móviles
-            app.canvas.addEventListener('touchstart', handleTouchStart);
-            app.canvas.addEventListener('touchmove', handleTouchMove);
-            app.canvas.addEventListener('touchend', stopDrawing);
-        }
-
-        // =====================================================
-        // GESTIÓN DE SALAS
-        // =====================================================
-        function createRoom() {
-            const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
-            joinRoom(roomId);
-            showToast(`Sala creada: ${roomId}`, 'success');
-        }
-
-        function joinRoom(roomId) {
-            // Salir de la sala anterior si existe
-            if (app.currentRoom) {
-                leaveRoom();
-            }
-
-            app.currentRoom = roomId;
-            elements.roomInput.value = roomId;
-            elements.canvasOverlay.classList.add('hidden');
-
-            // Limpiar canvas
-            app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-
-            // Escuchar nuevos trazos en tiempo real
-            listenToStrokes();
-
-            // Cargar trazos existentes
-            loadAllStrokes();
-
-            // Actualizar contador de usuarios
-            updateUserPresence();
-
-            showToast(`Conectado a sala: ${roomId}`, 'success');
-        }
-
-        function leaveRoom() {
-            if (app.drawingListener) {
-                app.drawingListener.off();
-            }
-            
-            if (app.currentRoom) {
-                const userRef = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
-                userRef.remove();
-            }
-
-            app.currentRoom = null;
-        }
-
-        // =====================================================
-        // PRESENCIA DE USUARIOS
-        // =====================================================
-        function updateUserPresence() {
-            const roomUsersRef = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
-            
-            // Marcar usuario como presente
-            roomUsersRef.set({
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-
-            // Eliminar usuario cuando se desconecte
-            roomUsersRef.onDisconnect().remove();
-
-            // Escuchar cambios en usuarios
-            const usersRef = database.ref(`rooms/${app.currentRoom}/users`);
-            usersRef.on('value', (snapshot) => {
-                const users = snapshot.val();
-                const count = users ? Object.keys(users).length : 0;
-                elements.userCount.textContent = count;
-            });
-        }
-
-        // =====================================================
-        // DIBUJO EN CANVAS
-        // =====================================================
-        function startDrawing(e) {
-            if (!app.currentRoom) return;
-            
-            app.isDrawing = true;
-            const pos = getMousePos(e);
-            app.lastX = pos.x;
-            app.lastY = pos.y;
-        }
-
-        function draw(e) {
-            if (!app.isDrawing || !app.currentRoom) return;
-            
-            const pos = getMousePos(e);
-            
-            // Dibujar localmente
-            drawLine(app.lastX, app.lastY, pos.x, pos.y, app.currentColor, app.brushSize, app.isEraser);
-            
-            // Enviar a Firebase
-            sendStroke(app.lastX, app.lastY, pos.x, pos.y, app.currentColor, app.brushSize, app.isEraser);
-            
-            app.lastX = pos.x;
-            app.lastY = pos.y;
-        }
-
-        function stopDrawing() {
-            app.isDrawing = false;
-        }
-
-        function drawLine(x1, y1, x2, y2, color, size, isEraser = false) {
-            app.ctx.beginPath();
-            app.ctx.moveTo(x1, y1);
-            app.ctx.lineTo(x2, y2);
-            app.ctx.strokeStyle = isEraser ? '#ffffff' : color;
-            app.ctx.lineWidth = size;
-            app.ctx.stroke();
-        }
-
-        function getMousePos(e) {
-            const rect = app.canvas.getBoundingClientRect();
-            const scaleX = app.canvas.width / rect.width;
-            const scaleY = app.canvas.height / rect.height;
-            
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        }
-
-        // Touch events
-        function handleTouchStart(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            app.canvas.dispatchEvent(mouseEvent);
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            app.canvas.dispatchEvent(mouseEvent);
-        }
-
-        // =====================================================
-        // FIREBASE - ENVIAR Y RECIBIR TRAZOS
-        // =====================================================
-        function sendStroke(x1, y1, x2, y2, color, size, isEraser) {
-            const strokeRef = database.ref(`rooms/${app.currentRoom}/strokes`).push();
-            strokeRef.set({
-                x1, y1, x2, y2, color, size, isEraser,
-                userId: app.userId,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-        }
-
-        function listenToStrokes() {
-            const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
-            
-            app.drawingListener = strokesRef.on('child_added', (snapshot) => {
-                const stroke = snapshot.val();
-                
-                // No redibujar trazos propios
-                if (stroke.userId !== app.userId) {
-                    drawLine(stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.color, stroke.size, stroke.isEraser);
-                }
-            });
-        }
-
-        function loadAllStrokes() {
-            const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
-            
-            strokesRef.once('value', (snapshot) => {
-                app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-                
-                snapshot.forEach((childSnapshot) => {
-                    const stroke = childSnapshot.val();
-                    drawLine(stroke.x1, stroke.y1, stroke.x2, stroke.y2, stroke.color, stroke.size, stroke.isEraser);
-                });
-            });
-        }
-
-        // =====================================================
-        // HERRAMIENTAS
-        // =====================================================
-        function updateColor(color) {
-            app.currentColor = color;
-            elements.colorPreview.style.background = color;
-            elements.brushIndicator.style.background = color;
-            
-            // Actualizar colores preset
-            document.querySelectorAll('.color-preset').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.color === color) {
-                    btn.classList.add('active');
-                }
-            });
-        }
-
-        function updateBrushSize(size) {
-            app.brushSize = size;
-            elements.brushSizeValue.textContent = size + 'px';
-            elements.brushIndicator.style.width = size + 'px';
-            elements.brushIndicator.style.height = size + 'px';
-        }
-
-        function setMode(mode) {
-            if (mode === 'draw') {
-                app.isEraser = false;
-                elements.drawModeBtn.classList.add('active');
-                elements.eraserModeBtn.classList.remove('active');
-            } else {
-                app.isEraser = true;
-                elements.eraserModeBtn.classList.add('active');
-                elements.drawModeBtn.classList.remove('active');
-            }
-        }
-
-        function clearCanvas() {
-            if (!app.currentRoom) return;
-            
-            if (confirm('¿Estás seguro de limpiar el lienzo? Esto afectará a todos los usuarios.')) {
-                // Limpiar en Firebase
-                database.ref(`rooms/${app.currentRoom}/strokes`).remove();
-                
-                // Limpiar localmente
-                app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-                
-                showToast('Lienzo limpiado', 'success');
-            }
-        }
-
-        function downloadCanvas() {
-            const link = document.createElement('a');
-            link.download = `neondraw-${Date.now()}.png`;
-            link.href = app.canvas.toDataURL();
-            link.click();
-            
-            showToast('Imagen descargada', 'success');
-        }
-
-        // =====================================================
-        // NOTIFICACIONES
-        // =====================================================
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `<div class="toast-message">${message}</div>`;
-            
-            elements.toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // =====================================================
-        // CLEANUP AL SALIR
-        // =====================================================
-        window.addEventListener('beforeunload', () => {
-            leaveRoom();
-        });
-    </script>
+    <!-- Script principal -->
+    <script src="app.js"></script>
 </body>
 </html>
