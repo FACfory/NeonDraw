@@ -2,29 +2,31 @@
 // CONFIGURACIÓN DE FIREBASE
 // =====================================================
 const firebaseConfig = {
-    apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w", // Tu API Key original
-    authDomain: "neondraw-app-gem.firebaseapp.com",
-    databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
-    projectId: "neondraw-app-gem",
-    storageBucket: "neondraw-app-gem.firebasestorage.app",
-    messagingSenderId: "611346212206",
-    appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
-    measurementId: "G-E366ZD3J90"
+  apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w",
+  authDomain: "neondraw-app-gem.firebaseapp.com",
+  databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
+  projectId: "neondraw-app-gem",
+  storageBucket: "neondraw-app-gem.firebasestorage.app",
+  messagingSenderId: "611346212206",
+  appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
+  measurementId: "G-E366ZD3J90"
 };
 
-// Inicializar Firebase
-let database;
-try {
-    // Verificamos si firebase está cargado antes de usarlo
-    if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        database = firebase.database();
-    } else {
-        console.error("Firebase SDK no cargado");
-    }
-} catch (error) {
-    console.error('Error al inicializar Firebase:', error);
-}
+
+// Variable para Firebase
+let database = null;
+
+// =====================================================
+// GALERÍA DE IMÁGENES PREDEFINIDAS
+// =====================================================
+const IMAGE_GALLERY = [
+    { name: 'Anatomía Mano', url: 'https://i.imgur.com/2qX8KpR.jpg' },
+    { name: 'Rostro Proporciones', url: 'https://i.imgur.com/8YJC9Qh.jpg' },
+    { name: 'Cuerpo Humano', url: 'https://w.wallhaven.cc/full/e8/wallhaven-e83mxl.png' },
+    { name: 'Perspectiva Ciudad', url: 'https://i.imgur.com/7tKmN4R.jpg' },
+    { name: 'Animales', url: 'https://i.imgur.com/9pLmQ2X.jpg' },
+    { name: 'Poses Dinámicas', url: 'https://i.imgur.com/3wRtY5K.jpg' }
+];
 
 // =====================================================
 // PALETAS PREDEFINIDAS
@@ -71,105 +73,114 @@ const app = {
     referenceImage: null,
     referenceOpacity: 0.5,
     currentPalette: 0,
-    isConnected: false
+    isConnected: false,
+    presenceRef: null,
+    heartbeatInterval: null
 };
 
 // =====================================================
-// ELEMENTOS DEL DOM (Declaración Segura)
+// ELEMENTOS DEL DOM
 // =====================================================
-let elements = {};
+const elements = {
+    loadingScreen: document.getElementById('loading-screen'),
+    appContainer: document.getElementById('app'),
+    canvas: document.getElementById('drawing-canvas'),
+    referenceCanvas: document.getElementById('reference-canvas'),
+    canvasOverlay: document.getElementById('canvas-overlay'),
+    roomInput: document.getElementById('room-id'),
+    joinRoomBtn: document.getElementById('join-room-btn'),
+    createRoomBtn: document.getElementById('create-room-btn'),
+    leaveRoomBtn: document.getElementById('leave-room-btn'),
+    clearCanvasBtn: document.getElementById('clear-canvas-btn'),
+    downloadBtn: document.getElementById('download-btn'),
+    colorPicker: document.getElementById('color-picker'),
+    colorPreview: document.getElementById('color-preview'),
+    brushSize: document.getElementById('brush-size'),
+    brushSizeValue: document.getElementById('brush-size-value'),
+    brushIndicator: document.getElementById('brush-indicator'),
+    drawModeBtn: document.getElementById('draw-mode'),
+    eraserModeBtn: document.getElementById('eraser-mode'),
+    userCount: document.getElementById('user-count'),
+    toastContainer: document.getElementById('toast-container'),
+    statusDot: document.getElementById('status-dot'),
+    statusText: document.getElementById('status-text'),
+    undoBtn: document.getElementById('undo-btn'),
+    redoBtn: document.getElementById('redo-btn'),
+    uploadReferenceBtn: document.getElementById('upload-reference-btn'),
+    referenceUpload: document.getElementById('reference-upload'),
+    loadUrlReferenceBtn: document.getElementById('load-url-reference-btn'),
+    galleryReferenceBtn: document.getElementById('gallery-reference-btn'),
+    clearReferenceBtn: document.getElementById('clear-reference-btn'),
+    referenceOpacity: document.getElementById('reference-opacity'),
+    referenceOpacityValue: document.getElementById('reference-opacity-value'),
+    referencePresets: document.getElementById('reference-presets'),
+    palettesList: document.getElementById('palettes-list'),
+    presetColors: document.getElementById('preset-colors'),
+    mobileMenuBtn: document.getElementById('mobile-menu-btn'),
+    toolbar: document.getElementById('toolbar'),
+    toolbarOverlay: document.getElementById('toolbar-overlay'),
+    urlModal: document.getElementById('url-modal'),
+    galleryModal: document.getElementById('gallery-modal'),
+    imageUrlInput: document.getElementById('image-url-input'),
+    loadUrlBtn: document.getElementById('load-url-btn'),
+    cancelUrlBtn: document.getElementById('cancel-url-btn'),
+    closeUrlModal: document.getElementById('close-url-modal'),
+    closeGalleryModal: document.getElementById('close-gallery-modal'),
+    galleryGrid: document.getElementById('gallery-grid')
+};
 
-function initDomElements() {
-    elements = {
-        loadingScreen: document.getElementById('loading-screen'),
-        appContainer: document.getElementById('app'),
-        canvas: document.getElementById('drawing-canvas'),
-        referenceCanvas: document.getElementById('reference-canvas'),
-        canvasOverlay: document.getElementById('canvas-overlay'),
-        roomInput: document.getElementById('room-id'),
-        joinRoomBtn: document.getElementById('join-room-btn'),
-        createRoomBtn: document.getElementById('create-room-btn'),
-        clearCanvasBtn: document.getElementById('clear-canvas-btn'),
-        downloadBtn: document.getElementById('download-btn'),
-        colorPicker: document.getElementById('color-picker'),
-        colorPreview: document.getElementById('color-preview'),
-        brushSize: document.getElementById('brush-size'),
-        brushSizeValue: document.getElementById('brush-size-value'),
-        brushIndicator: document.getElementById('brush-indicator'),
-        drawModeBtn: document.getElementById('draw-mode'),
-        eraserModeBtn: document.getElementById('eraser-mode'),
-        userCount: document.getElementById('user-count'),
-        toastContainer: document.getElementById('toast-container'),
-        statusDot: document.getElementById('status-dot'),
-        statusText: document.getElementById('status-text'),
-        undoBtn: document.getElementById('undo-btn'),
-        redoBtn: document.getElementById('redo-btn'),
-        uploadReferenceBtn: document.getElementById('upload-reference-btn'),
-        referenceUpload: document.getElementById('reference-upload'),
-        clearReferenceBtn: document.getElementById('clear-reference-btn'),
-        referenceOpacity: document.getElementById('reference-opacity'),
-        referenceOpacityValue: document.getElementById('reference-opacity-value'),
-        referencePresets: document.getElementById('reference-presets'),
-        palettesList: document.getElementById('palettes-list'),
-        presetColors: document.getElementById('preset-colors'),
-        mobileMenuBtn: document.getElementById('mobile-menu-btn'),
-        toolbar: document.getElementById('toolbar'),
-        toolbarOverlay: document.getElementById('toolbar-overlay')
-    };
-}
 
 // =====================================================
-// INICIALIZACIÓN PRINCIPAL
+// INICIALIZACIÓN
 // =====================================================
 window.addEventListener('load', () => {
-    // 1. Capturar elementos cuando el DOM está listo
-    initDomElements();
-
-    // 2. Configuración inicial
-    if (database) updateConnectionStatus(true);
-    
-    // 3. Transición de carga
-    setTimeout(() => {
-        // Ocultar carga
-        if (elements.loadingScreen) elements.loadingScreen.classList.add('hidden');
+    // Primero inicializar Firebase
+    try {
+        firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
         
-        // Mostrar App
-        if (elements.appContainer) {
-            elements.appContainer.style.display = 'flex';
-            
-            // IMPORTANTE: Inicializar canvas DESPUÉS de mostrar el contenedor
-            // Usamos requestAnimationFrame para asegurar que el navegador pintó el 'flex'
-            requestAnimationFrame(() => {
-                initializeCanvas();
-                resizeCanvas(); // Forzamos el tamaño correcto
-                
-                setupEventListeners();
-                initializePalettes();
-                initializeReferencePresets();
-                
-                // Unirse a sala desde URL si existe
-                const urlParams = new URLSearchParams(window.location.search);
-                const roomFromUrl = urlParams.get('room');
-                if (roomFromUrl && elements.roomInput) {
-                    elements.roomInput.value = roomFromUrl;
-                    joinRoom(roomFromUrl);
-                }
-            });
+        // Monitorear conexión
+        const connectedRef = database.ref('.info/connected');
+        connectedRef.on('value', (snap) => {
+            updateConnectionStatus(snap.val() === true);
+        });
+        
+        updateConnectionStatus(true);
+    } catch (error) {
+        console.error('Error al inicializar Firebase:', error);
+        updateConnectionStatus(false);
+        showToast('Error al conectar con Firebase. Revisa la configuración.', 'error');
+    }
+    
+    // Luego mostrar app
+    setTimeout(() => {
+        elements.loadingScreen.classList.add('hidden');
+        elements.appContainer.style.display = 'flex';
+        initializeCanvas();
+        setupEventListeners();
+        initializePalettes();
+        initializeReferencePresets();
+        
+        // Auto-join desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomFromUrl = urlParams.get('room');
+        if (roomFromUrl) {
+            elements.roomInput.value = roomFromUrl;
+            joinRoom(roomFromUrl);
         }
     }, 1500);
 });
 
 // =====================================================
-// CONFIGURACIÓN DEL CANVAS
+// CANVAS
 // =====================================================
 function initializeCanvas() {
-    if (!elements.canvas) return;
-
     app.canvas = elements.canvas;
     app.ctx = app.canvas.getContext('2d');
     app.referenceCanvas = elements.referenceCanvas;
     app.referenceCtx = app.referenceCanvas.getContext('2d');
 
+    resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     app.ctx.lineCap = 'round';
@@ -179,18 +190,14 @@ function initializeCanvas() {
 }
 
 function resizeCanvas() {
-    if (!app.canvas) return;
+    const container = app.canvas.parentElement;
+    const rect = container.getBoundingClientRect();
     
-    const wrapper = app.canvas.parentElement;
-    // Si el wrapper no tiene tamaño (ej. app oculta), usamos window como fallback
-    const rect = wrapper.getBoundingClientRect();
-    const wrapperWidth = rect.width || (window.innerWidth * 0.8);
-    const wrapperHeight = rect.height || (window.innerHeight * 0.8);
+    // Usar casi todo el espacio disponible
+    const maxWidth = rect.width * 0.98;
+    const maxHeight = rect.height * 0.98;
     
     // Mantener aspecto 4:3 pero adaptable
-    const maxWidth = Math.min(wrapperWidth * 0.95, 1200);
-    const maxHeight = Math.min(wrapperHeight * 0.95, 900);
-    
     let width = maxWidth;
     let height = width * (3/4);
     
@@ -199,40 +206,34 @@ function resizeCanvas() {
         width = height * (4/3);
     }
     
-    // Guardar contenido existente
+    // Asegurar tamaño mínimo
+    width = Math.max(width, 400);
+    height = Math.max(height, 300);
+    
     const imageData = app.canvas.width > 0 ? app.ctx.getImageData(0, 0, app.canvas.width, app.canvas.height) : null;
     
-    // Aplicar nuevas dimensiones
     app.canvas.width = width;
     app.canvas.height = height;
     app.referenceCanvas.width = width;
     app.referenceCanvas.height = height;
     
-    // Restaurar contenido
-    if (imageData) {
+    if (imageData && app.canvas.width >= imageData.width) {
         app.ctx.putImageData(imageData, 0, 0);
-    } else {
-        // Fondo blanco inicial
-        app.ctx.fillStyle = '#ffffff';
-        app.ctx.fillRect(0, 0, width, height);
     }
     
-    // Restaurar propiedades de dibujo (se pierden al redimensionar)
-    app.ctx.lineCap = 'round';
-    app.ctx.lineJoin = 'round';
-    app.ctx.lineWidth = app.brushSize;
-    app.ctx.strokeStyle = app.isEraser ? '#ffffff' : app.currentColor;
-
-    if (app.currentRoom) loadAllStrokes();
-    if (app.referenceImage) drawReferenceImage();
+    if (app.currentRoom) {
+        loadAllStrokes();
+    }
+    
+    if (app.referenceImage) {
+        drawReferenceImage();
+    }
 }
 
 // =====================================================
-// PALETAS Y COLORES
+// PALETAS Y REFERENCIAS
 // =====================================================
 function initializePalettes() {
-    if (!elements.palettesList) return;
-    
     PALETTES.forEach((palette, index) => {
         const paletteEl = document.createElement('div');
         paletteEl.className = 'palette-item' + (index === 0 ? ' active' : '');
@@ -272,28 +273,22 @@ function selectPalette(index) {
 
 function loadPaletteColors(index) {
     const palette = PALETTES[index];
-    if (elements.presetColors) {
-        elements.presetColors.innerHTML = '';
-        palette.colors.forEach(color => {
-            const btn = document.createElement('button');
-            btn.className = 'color-preset';
-            btn.dataset.color = color;
-            btn.style.background = color;
-            btn.addEventListener('click', () => {
-                updateColor(color);
-                elements.colorPicker.value = color;
-            });
-            elements.presetColors.appendChild(btn);
+    elements.presetColors.innerHTML = '';
+    
+    palette.colors.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'color-preset';
+        btn.dataset.color = color;
+        btn.style.background = color;
+        btn.addEventListener('click', () => {
+            updateColor(color);
+            elements.colorPicker.value = color;
         });
-    }
+        elements.presetColors.appendChild(btn);
+    });
 }
 
-// =====================================================
-// REFERENCIAS
-// =====================================================
 function initializeReferencePresets() {
-    if (!elements.referencePresets) return;
-    
     REFERENCE_PRESETS.forEach(preset => {
         const btn = document.createElement('div');
         btn.className = 'reference-preset';
@@ -307,26 +302,44 @@ function initializeReferencePresets() {
         ctx.strokeStyle = '#00d4ff';
         ctx.lineWidth = 2;
         
-        if (preset.type === 'circle') {
-            ctx.beginPath();
-            ctx.arc(50, 50, 40, 0, Math.PI * 2);
-            ctx.stroke();
-        } else if (preset.type === 'grid') {
-            for(let i = 0; i <= 100; i += 20) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 100); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(100, i); ctx.stroke();
-            }
-        } else if (preset.type === 'guides') {
-            ctx.beginPath(); ctx.moveTo(50, 0); ctx.lineTo(50, 100); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, 50); ctx.lineTo(100, 50); ctx.stroke();
-        } else if (preset.type === 'perspective') {
-            ctx.beginPath();
-            ctx.moveTo(10, 10); ctx.lineTo(50, 50); ctx.lineTo(10, 90);
-            ctx.moveTo(90, 10); ctx.lineTo(50, 50); ctx.lineTo(90, 90);
-            ctx.stroke();
+        switch(preset.type) {
+            case 'circle':
+                ctx.beginPath();
+                ctx.arc(50, 50, 40, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+            case 'grid':
+                for(let i = 0; i <= 100; i += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, 100);
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(100, i);
+                    ctx.stroke();
+                }
+                break;
+            case 'guides':
+                ctx.beginPath();
+                ctx.moveTo(50, 0);
+                ctx.lineTo(50, 100);
+                ctx.moveTo(0, 50);
+                ctx.lineTo(100, 50);
+                ctx.stroke();
+                break;
+            case 'perspective':
+                ctx.beginPath();
+                ctx.moveTo(10, 10);
+                ctx.lineTo(50, 50);
+                ctx.lineTo(10, 90);
+                ctx.moveTo(90, 10);
+                ctx.lineTo(50, 50);
+                ctx.lineTo(90, 90);
+                ctx.stroke();
+                break;
         }
         
         btn.appendChild(canvas);
+        
         const name = document.createElement('div');
         name.className = 'reference-preset-name';
         name.textContent = preset.name;
@@ -337,7 +350,6 @@ function initializeReferencePresets() {
 }
 
 function loadReferencePreset(type) {
-    if (!app.referenceCtx) return;
     const width = app.referenceCanvas.width;
     const height = app.referenceCanvas.height;
     
@@ -346,66 +358,123 @@ function loadReferencePreset(type) {
     app.referenceCtx.lineWidth = 2;
     app.referenceCtx.globalAlpha = app.referenceOpacity;
     
-    // (Lógica de dibujo simplificada para ahorrar espacio, es igual a la anterior)
-    if (type === 'circle') {
-        app.referenceCtx.beginPath();
-        app.referenceCtx.arc(width/2, height/2, Math.min(width, height)*0.4, 0, Math.PI*2);
-        app.referenceCtx.stroke();
-    } else if (type === 'grid') {
-        const gridSize = 50;
-        for(let x=0; x<=width; x+=gridSize) { app.referenceCtx.beginPath(); app.referenceCtx.moveTo(x,0); app.referenceCtx.lineTo(x,height); app.referenceCtx.stroke(); }
-        for(let y=0; y<=height; y+=gridSize) { app.referenceCtx.beginPath(); app.referenceCtx.moveTo(0,y); app.referenceCtx.lineTo(width,y); app.referenceCtx.stroke(); }
-    } else if (type === 'guides') {
-        app.referenceCtx.beginPath(); app.referenceCtx.moveTo(width/2,0); app.referenceCtx.lineTo(width/2,height); app.referenceCtx.stroke();
-        app.referenceCtx.beginPath(); app.referenceCtx.moveTo(0,height/2); app.referenceCtx.lineTo(width,height/2); app.referenceCtx.stroke();
-    } else if (type === 'perspective') {
-        app.referenceCtx.beginPath();
-        app.referenceCtx.moveTo(width*0.2, height*0.2); app.referenceCtx.lineTo(width*0.5, height*0.5); app.referenceCtx.lineTo(width*0.2, height*0.8);
-        app.referenceCtx.moveTo(width*0.8, height*0.2); app.referenceCtx.lineTo(width*0.5, height*0.5); app.referenceCtx.lineTo(width*0.8, height*0.8);
-        app.referenceCtx.stroke();
+    switch(type) {
+        case 'circle':
+            const radius = Math.min(width, height) * 0.4;
+            app.referenceCtx.beginPath();
+            app.referenceCtx.arc(width/2, height/2, radius, 0, Math.PI * 2);
+            app.referenceCtx.stroke();
+            break;
+        case 'grid':
+            const gridSize = 50;
+            for(let x = 0; x <= width; x += gridSize) {
+                app.referenceCtx.beginPath();
+                app.referenceCtx.moveTo(x, 0);
+                app.referenceCtx.lineTo(x, height);
+                app.referenceCtx.stroke();
+            }
+            for(let y = 0; y <= height; y += gridSize) {
+                app.referenceCtx.beginPath();
+                app.referenceCtx.moveTo(0, y);
+                app.referenceCtx.lineTo(width, y);
+                app.referenceCtx.stroke();
+            }
+            break;
+        case 'guides':
+            app.referenceCtx.beginPath();
+            app.referenceCtx.moveTo(width/2, 0);
+            app.referenceCtx.lineTo(width/2, height);
+            app.referenceCtx.moveTo(0, height/2);
+            app.referenceCtx.lineTo(width, height/2);
+            app.referenceCtx.stroke();
+            break;
+        case 'perspective':
+            app.referenceCtx.beginPath();
+            app.referenceCtx.moveTo(width * 0.2, height * 0.2);
+            app.referenceCtx.lineTo(width * 0.5, height * 0.5);
+            app.referenceCtx.lineTo(width * 0.2, height * 0.8);
+            app.referenceCtx.moveTo(width * 0.8, height * 0.2);
+            app.referenceCtx.lineTo(width * 0.5, height * 0.5);
+            app.referenceCtx.lineTo(width * 0.8, height * 0.8);
+            app.referenceCtx.stroke();
+            break;
     }
     
     app.referenceCtx.globalAlpha = 1;
     app.referenceImage = type;
+    elements.clearReferenceBtn.disabled = false;
+    
     showToast('Referencia cargada', 'success');
 }
+
 
 // =====================================================
 // EVENT LISTENERS
 // =====================================================
 function setupEventListeners() {
-    if (!elements.joinRoomBtn) return;
-
+    // Sala
     elements.createRoomBtn.addEventListener('click', createRoom);
     elements.joinRoomBtn.addEventListener('click', () => {
         const roomId = elements.roomInput.value.trim();
-        if (!roomId) return showToast('Ingresa un código', 'error');
-        if (roomId.length < 3) return showToast('Mínimo 3 caracteres', 'error');
+        if (!roomId) {
+            showToast('Ingresa un código de sala', 'error');
+            return;
+        }
+        if (roomId.length < 3) {
+            showToast('El código debe tener al menos 3 caracteres', 'error');
+            return;
+        }
         joinRoom(roomId);
     });
-
+    elements.leaveRoomBtn.addEventListener('click', () => {
+        if (confirm('¿Seguro que quieres salir de la sala?')) {
+            leaveRoom();
+            showToast('Has salido de la sala', 'success');
+        }
+    });
     elements.roomInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') elements.joinRoomBtn.click();
     });
 
+    // Herramientas
     elements.colorPicker.addEventListener('input', (e) => updateColor(e.target.value));
     elements.brushSize.addEventListener('input', (e) => updateBrushSize(parseInt(e.target.value)));
     elements.drawModeBtn.addEventListener('click', () => setMode('draw'));
     elements.eraserModeBtn.addEventListener('click', () => setMode('eraser'));
+
+    // Historial
     elements.undoBtn.addEventListener('click', undo);
     elements.redoBtn.addEventListener('click', redo);
-
     document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            undo();
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+            e.preventDefault();
+            redo();
+        }
     });
 
+    // Referencias
     elements.uploadReferenceBtn.addEventListener('click', () => elements.referenceUpload.click());
     elements.referenceUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) loadReferenceImage(file);
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Selecciona una imagen válida', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('La imagen es muy grande (máx 5MB)', 'error');
+                return;
+            }
+            loadReferenceImage(file);
+        }
     });
     
+    elements.loadUrlReferenceBtn.addEventListener('click', openUrlModal);
+    elements.galleryReferenceBtn.addEventListener('click', openGalleryModal);
     elements.clearReferenceBtn.addEventListener('click', clearReference);
     elements.referenceOpacity.addEventListener('input', (e) => {
         app.referenceOpacity = parseInt(e.target.value) / 100;
@@ -413,10 +482,23 @@ function setupEventListeners() {
         if (app.referenceImage) drawReferenceImage();
     });
 
+    // Modales
+    elements.closeUrlModal.addEventListener('click', closeUrlModal);
+    elements.cancelUrlBtn.addEventListener('click', closeUrlModal);
+    elements.loadUrlBtn.addEventListener('click', loadImageFromUrl);
+    elements.closeGalleryModal.addEventListener('click', closeGalleryModal);
+    elements.urlModal.addEventListener('click', (e) => {
+        if (e.target === elements.urlModal) closeUrlModal();
+    });
+    elements.galleryModal.addEventListener('click', (e) => {
+        if (e.target === elements.galleryModal) closeGalleryModal();
+    });
+
+    // Acciones
     elements.clearCanvasBtn.addEventListener('click', clearCanvas);
     elements.downloadBtn.addEventListener('click', downloadCanvas);
 
-    // Mouse & Touch
+    // Canvas
     app.canvas.addEventListener('mousedown', startDrawing);
     app.canvas.addEventListener('mousemove', draw);
     app.canvas.addEventListener('mouseup', stopDrawing);
@@ -425,6 +507,7 @@ function setupEventListeners() {
     app.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     app.canvas.addEventListener('touchend', stopDrawing);
     
+    // Móvil
     elements.mobileMenuBtn.addEventListener('click', toggleMobileMenu);
     elements.toolbarOverlay.addEventListener('click', toggleMobileMenu);
 }
@@ -435,83 +518,207 @@ function toggleMobileMenu() {
 }
 
 // =====================================================
-// LÓGICA DE DIBUJO Y SALAS
+// GESTIÓN DE SALAS CON HEARTBEAT
 // =====================================================
 function createRoom() {
-    if (!database) return showToast('Error: Firebase no conectado', 'error');
+    if (!database) {
+        showToast('Error: Firebase no está conectado', 'error');
+        return;
+    }
+    
     const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
+    elements.roomInput.value = ''; // Limpiar input
     joinRoom(roomId);
-    showToast(`Sala creada: ${roomId}`, 'success');
 }
 
 function joinRoom(roomId) {
-    if (!database) return showToast('Error: Firebase no conectado', 'error');
-    if (app.currentRoom) leaveRoom();
+    if (!database) {
+        showToast('Error: Firebase no está conectado', 'error');
+        return;
+    }
+    
+    if (app.currentRoom) {
+        leaveRoom();
+    }
 
     app.currentRoom = roomId;
     elements.roomInput.value = roomId;
+    elements.roomInput.disabled = true;
     elements.canvasOverlay.classList.add('hidden');
 
+    // Actualizar UI de botones
+    elements.joinRoomBtn.style.display = 'none';
+    elements.createRoomBtn.style.display = 'none';
+    elements.leaveRoomBtn.style.display = 'flex';
+
+    // Actualizar URL
     const url = new URL(window.location);
     url.searchParams.set('room', roomId);
     window.history.pushState({}, '', url);
 
+    // Limpiar canvas y historial
     app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-    // Restaurar fondo blanco
-    app.ctx.fillStyle = '#ffffff';
-    app.ctx.fillRect(0, 0, app.canvas.width, app.canvas.height);
-    
     app.history = [];
     app.historyStep = -1;
     saveToHistory();
 
+    // Configurar presencia con heartbeat
+    setupPresence();
+
+    // Cargar y escuchar trazos
     listenToStrokes();
     loadAllStrokes();
-    updateUserPresence();
+
     showToast(`Conectado a sala: ${roomId}`, 'success');
 }
 
-function leaveRoom() {
-    if (app.drawingListener) app.drawingListener.off();
-    if (app.currentRoom && database) {
-        database.ref(`rooms/${app.currentRoom}/users/${app.userId}`).remove();
+function setupPresence() {
+    if (!database || !app.currentRoom) return;
+    
+    const userRef = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
+    const usersRef = database.ref(`rooms/${app.currentRoom}/users`);
+    
+    // Establecer presencia inicial
+    app.presenceRef = userRef;
+    userRef.set({
+        t: firebase.database.ServerValue.TIMESTAMP,
+        heartbeat: firebase.database.ServerValue.TIMESTAMP
+    }).catch(err => console.error('Error en presencia:', err));
+
+    // Configurar desconexión automática
+    userRef.onDisconnect().remove();
+
+    // Heartbeat cada 5 segundos para mantener conexión
+    if (app.heartbeatInterval) {
+        clearInterval(app.heartbeatInterval);
     }
+    
+    app.heartbeatInterval = setInterval(() => {
+        if (app.currentRoom && app.isConnected) {
+            userRef.update({
+                heartbeat: firebase.database.ServerValue.TIMESTAMP
+            }).catch(err => {
+                console.error('Error en heartbeat:', err);
+                // Si falla heartbeat, intentar reconectar
+                if (app.isConnected) {
+                    showToast('Reconectando...', 'warning');
+                    userRef.set({
+                        t: firebase.database.ServerValue.TIMESTAMP,
+                        heartbeat: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+        }
+    }, 5000);
+
+    // Escuchar cambios en usuarios
+    usersRef.on('value', (snapshot) => {
+        const users = snapshot.val();
+        if (!users) {
+            elements.userCount.textContent = '0';
+            return;
+        }
+        
+        // Filtrar usuarios con heartbeat reciente (últimos 15 segundos)
+        const now = Date.now();
+        const activeUsers = Object.entries(users).filter(([id, data]) => {
+            return data.heartbeat && (now - data.heartbeat < 15000);
+        });
+        
+        const count = activeUsers.length;
+        elements.userCount.textContent = count;
+        
+        // Notificar cuando se une alguien
+        if (count >= 2 && count !== app.lastUserCount) {
+            showToast('¡Usuario conectado!', 'success');
+        }
+        app.lastUserCount = count;
+    });
+
+    // Limpiar usuarios inactivos cada 30 segundos
+    setInterval(() => {
+        if (!app.currentRoom) return;
+        
+        usersRef.once('value', (snapshot) => {
+            const users = snapshot.val();
+            if (!users) return;
+            
+            const now = Date.now();
+            Object.entries(users).forEach(([userId, data]) => {
+                if (data.heartbeat && (now - data.heartbeat > 30000)) {
+                    database.ref(`rooms/${app.currentRoom}/users/${userId}`).remove();
+                }
+            });
+        });
+    }, 30000);
+}
+
+function leaveRoom() {
+    // Detener heartbeat
+    if (app.heartbeatInterval) {
+        clearInterval(app.heartbeatInterval);
+        app.heartbeatInterval = null;
+    }
+    
+    // Detener listener de trazos
+    if (app.drawingListener) {
+        const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
+        strokesRef.off('child_added', app.drawingListener);
+    }
+    
+    // Remover presencia
+    if (app.presenceRef && database) {
+        app.presenceRef.remove();
+    }
+
     app.currentRoom = null;
+    app.presenceRef = null;
+    
+    // Actualizar UI
+    elements.roomInput.value = '';
+    elements.roomInput.disabled = false;
+    elements.canvasOverlay.classList.remove('hidden');
+    elements.joinRoomBtn.style.display = 'inline-block';
+    elements.createRoomBtn.style.display = 'inline-block';
+    elements.leaveRoomBtn.style.display = 'none';
+    elements.userCount.textContent = '0';
+    
+    // Limpiar URL
     const url = new URL(window.location);
     url.searchParams.delete('room');
     window.history.pushState({}, '', url);
 }
 
-function updateUserPresence() {
-    if (!database || !app.currentRoom) return;
-    const ref = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
-    ref.set({ t: firebase.database.ServerValue.TIMESTAMP });
-    ref.onDisconnect().remove();
-    
-    database.ref(`rooms/${app.currentRoom}/users`).on('value', (snap) => {
-        const c = snap.val() ? Object.keys(snap.val()).length : 0;
-        elements.userCount.textContent = c;
-    });
-}
-
 function updateConnectionStatus(connected) {
     app.isConnected = connected;
+    
     if (connected) {
         elements.statusDot.classList.remove('disconnected');
         elements.statusText.textContent = 'Conectado';
+        
+        // Si estaba en sala, restablecer presencia
+        if (app.currentRoom && app.presenceRef) {
+            app.presenceRef.set({
+                t: firebase.database.ServerValue.TIMESTAMP,
+                heartbeat: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
     } else {
         elements.statusDot.classList.add('disconnected');
         elements.statusText.textContent = 'Desconectado';
     }
 }
 
-// Monitoreo de conexión
-if (typeof firebase !== 'undefined' && database) {
-    database.ref('.info/connected').on('value', (snap) => updateConnectionStatus(snap.val() === true));
-}
 
+// =====================================================
+// DIBUJO EN CANVAS
+// =====================================================
 function startDrawing(e) {
-    if (!app.currentRoom) return showToast('Únete a una sala primero', 'warning');
+    if (!app.currentRoom) {
+        showToast('Únete a una sala primero', 'warning');
+        return;
+    }
+    
     app.isDrawing = true;
     const pos = getMousePos(e);
     app.lastX = Math.round(pos.x);
@@ -521,6 +728,7 @@ function startDrawing(e) {
 
 function draw(e) {
     if (!app.isDrawing || !app.currentRoom) return;
+    
     const pos = getMousePos(e);
     const x = Math.round(pos.x);
     const y = Math.round(pos.y);
@@ -533,6 +741,7 @@ function draw(e) {
         sendStrokeBatch();
         app.lastEmitTime = now;
     }
+    
     app.lastX = x;
     app.lastY = y;
 }
@@ -540,11 +749,15 @@ function draw(e) {
 function stopDrawing() {
     if (!app.isDrawing) return;
     app.isDrawing = false;
-    if (app.currentStroke.length > 0) sendStrokeBatch();
+    
+    if (app.currentStroke.length > 0) {
+        sendStrokeBatch();
+    }
+    
     saveToHistory();
 }
 
-function drawLine(x1, y1, x2, y2, color, size, isEraser) {
+function drawLine(x1, y1, x2, y2, color, size, isEraser = false) {
     app.ctx.beginPath();
     app.ctx.moveTo(x1, y1);
     app.ctx.lineTo(x2, y2);
@@ -557,70 +770,128 @@ function getMousePos(e) {
     const rect = app.canvas.getBoundingClientRect();
     const scaleX = app.canvas.width / rect.width;
     const scaleY = app.canvas.height / rect.height;
+    
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    
+    return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+    };
 }
 
 function handleTouchStart(e) {
     e.preventDefault();
-    const t = e.touches[0];
-    app.canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: t.clientX, clientY: t.clientY }));
-}
-function handleTouchMove(e) {
-    e.preventDefault();
-    const t = e.touches[0];
-    app.canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: t.clientX, clientY: t.clientY }));
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    app.canvas.dispatchEvent(mouseEvent);
 }
 
+function handleTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+    });
+    app.canvas.dispatchEvent(mouseEvent);
+}
+
+// =====================================================
+// FIREBASE - TRAZOS
+// =====================================================
 function sendStrokeBatch() {
     if (!app.currentStroke.length || !app.currentRoom || !database) return;
-    database.ref(`rooms/${app.currentRoom}/strokes`).push().set({
-        p: app.currentStroke, c: app.currentColor, s: app.brushSize, e: app.isEraser, u: app.userId, t: firebase.database.ServerValue.TIMESTAMP
-    });
+    
+    const strokeRef = database.ref(`rooms/${app.currentRoom}/strokes`).push();
+    strokeRef.set({
+        p: app.currentStroke,
+        c: app.currentColor,
+        s: app.brushSize,
+        e: app.isEraser,
+        u: app.userId,
+        t: firebase.database.ServerValue.TIMESTAMP
+    }).catch(err => console.error('Error al enviar trazo:', err));
+    
     app.currentStroke = [];
 }
 
 function listenToStrokes() {
     if (!database || !app.currentRoom) return;
-    database.ref(`rooms/${app.currentRoom}/strokes`).on('child_added', (snapshot) => {
-        const s = snapshot.val();
-        if (s.u !== app.userId && s.p) {
-            s.p.forEach(p => drawLine(p.x1, p.y1, p.x2, p.y2, s.c, s.s, s.e));
+    
+    const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
+    
+    app.drawingListener = strokesRef.on('child_added', (snapshot) => {
+        const stroke = snapshot.val();
+        
+        if (stroke.u !== app.userId && stroke.p && Array.isArray(stroke.p)) {
+            stroke.p.forEach(point => {
+                drawLine(point.x1, point.y1, point.x2, point.y2, stroke.c, stroke.s, stroke.e);
+            });
         }
     });
 }
 
 function loadAllStrokes() {
     if (!database || !app.currentRoom) return;
-    database.ref(`rooms/${app.currentRoom}/strokes`).once('value', (snapshot) => {
-        // No limpiar aquí para no borrar el fondo blanco, solo si es necesario
-        // app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-        snapshot.forEach((child) => {
-            const s = child.val();
-            if (s.p) s.p.forEach(p => drawLine(p.x1, p.y1, p.x2, p.y2, s.c, s.s, s.e));
+    
+    const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
+    
+    strokesRef.once('value', (snapshot) => {
+        app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
+        
+        snapshot.forEach((childSnapshot) => {
+            const stroke = childSnapshot.val();
+            if (stroke.p && Array.isArray(stroke.p)) {
+                stroke.p.forEach(point => {
+                    drawLine(point.x1, point.y1, point.x2, point.y2, stroke.c, stroke.s, stroke.e);
+                });
+            }
         });
+        
         saveToHistory();
+    }).catch(err => {
+        console.error('Error al cargar trazos:', err);
+        showToast('Error al cargar dibujos', 'error');
     });
 }
 
+// =====================================================
+// HISTORIAL
+// =====================================================
 function saveToHistory() {
-    if (app.historyStep < app.history.length - 1) app.history = app.history.slice(0, app.historyStep + 1);
+    if (app.historyStep < app.history.length - 1) {
+        app.history = app.history.slice(0, app.historyStep + 1);
+    }
+    
     app.history.push(app.canvas.toDataURL());
     app.historyStep++;
-    if (app.history.length > app.maxHistory) { app.history.shift(); app.historyStep--; }
-    if(elements.undoBtn) {
-        elements.undoBtn.disabled = app.historyStep <= 0;
-        elements.redoBtn.disabled = app.historyStep >= app.history.length - 1;
+    
+    if (app.history.length > app.maxHistory) {
+        app.history.shift();
+        app.historyStep--;
     }
+    
+    updateHistoryButtons();
 }
 
 function undo() {
-    if (app.historyStep > 0) { app.historyStep--; restoreFromHistory(); }
+    if (app.historyStep > 0) {
+        app.historyStep--;
+        restoreFromHistory();
+    }
 }
+
 function redo() {
-    if (app.historyStep < app.history.length - 1) { app.historyStep++; restoreFromHistory(); }
+    if (app.historyStep < app.history.length - 1) {
+        app.historyStep++;
+        restoreFromHistory();
+    }
 }
+
 function restoreFromHistory() {
     if (app.history[app.historyStep]) {
         const img = new Image();
@@ -628,110 +899,274 @@ function restoreFromHistory() {
         img.onload = () => {
             app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
             app.ctx.drawImage(img, 0, 0);
-            // Actualizar estado de botones
-            elements.undoBtn.disabled = app.historyStep <= 0;
-            elements.redoBtn.disabled = app.historyStep >= app.history.length - 1;
         };
     }
 }
 
+function updateHistoryButtons() {
+    elements.undoBtn.disabled = app.historyStep <= 0;
+    elements.redoBtn.disabled = app.historyStep >= app.history.length - 1;
+}
+
+// =====================================================
+// MODALES Y REFERENCIAS
+// =====================================================
+function openUrlModal() {
+    elements.urlModal.classList.add('show');
+    elements.imageUrlInput.value = '';
+    elements.imageUrlInput.focus();
+}
+
+function closeUrlModal() {
+    elements.urlModal.classList.remove('show');
+}
+
+function loadImageFromUrl() {
+    const url = elements.imageUrlInput.value.trim();
+    
+    if (!url) {
+        showToast('Ingresa una URL válida', 'error');
+        return;
+    }
+    
+    if (!url.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) && !url.includes('imgur') && !url.includes('image')) {
+        showToast('La URL debe ser una imagen válida', 'warning');
+    }
+    
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+        app.referenceImage = img;
+        drawReferenceImage();
+        elements.clearReferenceBtn.disabled = false;
+        closeUrlModal();
+        showToast('Imagen cargada correctamente', 'success');
+    };
+    
+    img.onerror = () => {
+        showToast('Error al cargar la imagen. Verifica la URL o permisos CORS', 'error');
+    };
+    
+    img.src = url;
+}
+
+function openGalleryModal() {
+    elements.galleryModal.classList.add('show');
+    loadGallery();
+}
+
+function closeGalleryModal() {
+    elements.galleryModal.classList.remove('show');
+}
+
+function loadGallery() {
+    elements.galleryGrid.innerHTML = '<div class="gallery-item-loading">Cargando galería...</div>';
+    
+    // Simular carga (en producción cargarías desde servidor/BD)
+    setTimeout(() => {
+        elements.galleryGrid.innerHTML = '';
+        
+        IMAGE_GALLERY.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            
+            const img = document.createElement('img');
+            img.src = item.url;
+            img.alt = item.name;
+            img.loading = 'lazy';
+            
+            img.onerror = () => {
+                div.innerHTML = '<div class="gallery-item-loading">Error al cargar</div>';
+            };
+            
+            div.appendChild(img);
+            div.addEventListener('click', () => loadGalleryImage(item.url));
+            
+            elements.galleryGrid.appendChild(div);
+        });
+    }, 500);
+}
+
+function loadGalleryImage(url) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    img.onload = () => {
+        app.referenceImage = img;
+        drawReferenceImage();
+        elements.clearReferenceBtn.disabled = false;
+        closeGalleryModal();
+        showToast('Imagen de referencia cargada', 'success');
+    };
+    
+    img.onerror = () => {
+        showToast('Error al cargar la imagen', 'error');
+    };
+    
+    img.src = url;
+}
+
 function loadReferenceImage(file) {
-    if (!file.type.startsWith('image/')) return showToast('Imagen inválida', 'error');
     const reader = new FileReader();
+    
     reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
             app.referenceImage = img;
             drawReferenceImage();
-            showToast('Referencia cargada', 'success');
+            elements.clearReferenceBtn.disabled = false;
+            showToast('Imagen de referencia cargada', 'success');
+        };
+        img.onerror = () => {
+            showToast('Error al cargar la imagen', 'error');
         };
         img.src = e.target.result;
     };
+    
+    reader.onerror = () => {
+        showToast('Error al leer el archivo', 'error');
+    };
+    
     reader.readAsDataURL(file);
 }
 
 function drawReferenceImage() {
-    if (!app.referenceImage || !app.referenceCtx) return;
-    const w = app.referenceCanvas.width, h = app.referenceCanvas.height;
-    app.referenceCtx.clearRect(0, 0, w, h);
+    if (!app.referenceImage) return;
+    
+    const width = app.referenceCanvas.width;
+    const height = app.referenceCanvas.height;
+    
+    app.referenceCtx.clearRect(0, 0, width, height);
     app.referenceCtx.globalAlpha = app.referenceOpacity;
     
     if (app.referenceImage instanceof HTMLImageElement) {
-        const r = app.referenceImage.width / app.referenceImage.height;
-        const cr = w / h;
-        let dw, dh, ox, oy;
-        if (r > cr) { dw = w; dh = w / r; ox = 0; oy = (h - dh) / 2; }
-        else { dh = h; dw = h * r; ox = (w - dw) / 2; oy = 0; }
-        app.referenceCtx.drawImage(app.referenceImage, ox, oy, dw, dh);
+        const imgRatio = app.referenceImage.width / app.referenceImage.height;
+        const canvasRatio = width / height;
+        
+        let drawWidth, drawHeight, offsetX, offsetY;
+        
+        if (imgRatio > canvasRatio) {
+            drawWidth = width;
+            drawHeight = width / imgRatio;
+            offsetX = 0;
+            offsetY = (height - drawHeight) / 2;
+        } else {
+            drawHeight = height;
+            drawWidth = height * imgRatio;
+            offsetX = (width - drawWidth) / 2;
+            offsetY = 0;
+        }
+        
+        app.referenceCtx.drawImage(app.referenceImage, offsetX, offsetY, drawWidth, drawHeight);
     }
+    
     app.referenceCtx.globalAlpha = 1;
 }
 
 function clearReference() {
+    if (!app.referenceImage) {
+        showToast('No hay referencia para eliminar', 'warning');
+        return;
+    }
+    
     app.referenceImage = null;
     app.referenceCtx.clearRect(0, 0, app.referenceCanvas.width, app.referenceCanvas.height);
     elements.referenceUpload.value = '';
+    elements.clearReferenceBtn.disabled = true;
+    
+    document.querySelectorAll('.reference-preset').forEach(el => {
+        el.classList.remove('active');
+    });
+    
     showToast('Referencia eliminada', 'success');
 }
 
+
+// =====================================================
+// HERRAMIENTAS
+// =====================================================
 function updateColor(color) {
     app.currentColor = color;
     elements.colorPreview.style.background = color;
     elements.brushIndicator.style.background = color;
+    
     document.querySelectorAll('.color-preset').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.color === color) btn.classList.add('active');
+        btn.classList.toggle('active', btn.dataset.color === color);
     });
 }
+
 function updateBrushSize(size) {
     app.brushSize = size;
     elements.brushSizeValue.textContent = size + 'px';
     elements.brushIndicator.style.width = size + 'px';
     elements.brushIndicator.style.height = size + 'px';
 }
+
 function setMode(mode) {
-    app.isEraser = (mode === 'eraser');
-    elements.drawModeBtn.classList.toggle('active', mode === 'draw');
-    elements.eraserModeBtn.classList.toggle('active', mode === 'eraser');
+    if (mode === 'draw') {
+        app.isEraser = false;
+        elements.drawModeBtn.classList.add('active');
+        elements.eraserModeBtn.classList.remove('active');
+    } else {
+        app.isEraser = true;
+        elements.eraserModeBtn.classList.add('active');
+        elements.drawModeBtn.classList.remove('active');
+    }
 }
 
 function clearCanvas() {
-    if (!app.currentRoom) return showToast('Únete a una sala', 'warning');
-    if (confirm('¿Limpiar lienzo para todos?')) {
+    if (!app.currentRoom) {
+        showToast('Únete a una sala primero', 'warning');
+        return;
+    }
+    
+    if (confirm('¿Estás seguro de limpiar el lienzo? Esto afectará a todos los usuarios.')) {
         database.ref(`rooms/${app.currentRoom}/strokes`).remove()
             .then(() => {
                 app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-                app.ctx.fillStyle = '#ffffff'; // Restaurar fondo blanco
-                app.ctx.fillRect(0, 0, app.canvas.width, app.canvas.height);
-                app.history = []; app.historyStep = -1; saveToHistory();
+                app.history = [];
+                app.historyStep = -1;
+                saveToHistory();
                 showToast('Lienzo limpiado', 'success');
+            })
+            .catch(err => {
+                console.error('Error al limpiar:', err);
+                showToast('Error al limpiar el lienzo', 'error');
             });
     }
 }
 
 function downloadCanvas() {
-    const link = document.createElement('a');
-    link.download = `neondraw-${Date.now()}.png`;
-    link.href = app.canvas.toDataURL();
-    link.click();
-}
-
-function showToast(msg, type = 'success') {
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.innerHTML = `<div class="toast-message">${msg}</div>`;
-    elements.toastContainer.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
-}
-
-window.addEventListener('beforeunload', leaveRoom);
-// Limpieza auto
-setInterval(() => {
-    if (app.currentRoom && database) {
-        database.ref(`rooms/${app.currentRoom}/users`).once('value', (snap) => {
-            if (!snap.val()) setTimeout(() => database.ref(`rooms/${app.currentRoom}`).remove(), 300000);
-        });
+    try {
+        const link = document.createElement('a');
+        link.download = `neondraw-${Date.now()}.png`;
+        link.href = app.canvas.toDataURL();
+        link.click();
+        showToast('Imagen descargada', 'success');
+    } catch (err) {
+        console.error('Error al descargar:', err);
+        showToast('Error al descargar la imagen', 'error');
     }
-}, 60000);
+}
 
-console.log('%cNeonDraw v2.0 Corregido ✅', 'color: #00ff88; font-weight: bold;');
+// =====================================================
+// NOTIFICACIONES
+// =====================================================
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast-message">${message}</div>`;
+    
+    elements.toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Log de inicio
+console.log('%cNeonDraw v2.1 cargado ✅', 'color: #00ff88; font-size: 16px; font-weight: bold;');
+console.log('%cRecuerda configurar Firebase!', 'color: #00d4ff; font-size: 14px;');
+
