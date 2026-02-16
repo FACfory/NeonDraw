@@ -2,18 +2,16 @@
 // CONFIGURACIÓN DE FIREBASE
 // =====================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w",
-  authDomain: "neondraw-app-gem.firebaseapp.com",
-  databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
-  projectId: "neondraw-app-gem",
-  storageBucket: "neondraw-app-gem.firebasestorage.app",
-  messagingSenderId: "611346212206",
-  appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
-  measurementId: "G-E366ZD3J90"
-};
+            apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w",
+            authDomain: "neondraw-app-gem.firebaseapp.com",
+            databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
+            projectId: "neondraw-app-gem",
+            storageBucket: "neondraw-app-gem.firebasestorage.app",
+            messagingSenderId: "611346212206",
+            appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
+            measurementId: "G-E366ZD3J90"
+        };
 
-
-// Variable para Firebase
 let database = null;
 
 // =====================================================
@@ -22,15 +20,12 @@ let database = null;
 const IMAGE_GALLERY = [
     { name: 'Anatomía Mano', url: 'https://i.imgur.com/2qX8KpR.jpg' },
     { name: 'Rostro Proporciones', url: 'https://i.imgur.com/8YJC9Qh.jpg' },
-    { name: 'Cuerpo Humano', url: 'https://w.wallhaven.cc/full/e8/wallhaven-e83mxl.png' },
+    { name: 'Cuerpo Humano', url: 'https://i.imgur.com/5zKx9Yh.jpg' },
     { name: 'Perspectiva Ciudad', url: 'https://i.imgur.com/7tKmN4R.jpg' },
     { name: 'Animales', url: 'https://i.imgur.com/9pLmQ2X.jpg' },
     { name: 'Poses Dinámicas', url: 'https://i.imgur.com/3wRtY5K.jpg' }
 ];
 
-// =====================================================
-// PALETAS PREDEFINIDAS
-// =====================================================
 const PALETTES = [
     { name: 'Neón', colors: ['#00ff88', '#00d4ff', '#ff00ff', '#ffff00', '#ff0066', '#ffffff'] },
     { name: 'Pastel', colors: ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#E0BBE4'] },
@@ -64,18 +59,23 @@ const app = {
     referenceCanvas: null,
     referenceCtx: null,
     drawingListener: null,
+    historyListener: null,
     currentStroke: [],
     lastEmitTime: 0,
     emitThrottle: 50,
-    history: [],
-    historyStep: -1,
-    maxHistory: 50,
     referenceImage: null,
     referenceOpacity: 0.5,
     currentPalette: 0,
     isConnected: false,
     presenceRef: null,
-    heartbeatInterval: null
+    heartbeatInterval: null,
+    canvasSize: 1000, // Tamaño cuadrado fijo
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+    isPinching: false,
+    lastDistance: 0,
+    debounceTimers: {}
 };
 
 // =====================================================
@@ -129,17 +129,14 @@ const elements = {
     galleryGrid: document.getElementById('gallery-grid')
 };
 
-
 // =====================================================
 // INICIALIZACIÓN
 // =====================================================
 window.addEventListener('load', () => {
-    // Primero inicializar Firebase
     try {
         firebase.initializeApp(firebaseConfig);
         database = firebase.database();
         
-        // Monitorear conexión
         const connectedRef = database.ref('.info/connected');
         connectedRef.on('value', (snap) => {
             updateConnectionStatus(snap.val() === true);
@@ -152,7 +149,6 @@ window.addEventListener('load', () => {
         showToast('Error al conectar con Firebase. Revisa la configuración.', 'error');
     }
     
-    // Luego mostrar app
     setTimeout(() => {
         elements.loadingScreen.classList.add('hidden');
         elements.appContainer.style.display = 'flex';
@@ -161,7 +157,6 @@ window.addEventListener('load', () => {
         initializePalettes();
         initializeReferencePresets();
         
-        // Auto-join desde URL
         const urlParams = new URLSearchParams(window.location.search);
         const roomFromUrl = urlParams.get('room');
         if (roomFromUrl) {
@@ -172,62 +167,80 @@ window.addEventListener('load', () => {
 });
 
 // =====================================================
-// CANVAS
+// CANVAS CON willReadFrequently
 // =====================================================
 function initializeCanvas() {
     app.canvas = elements.canvas;
-    app.ctx = app.canvas.getContext('2d');
+    app.ctx = app.canvas.getContext('2d', { willReadFrequently: true });
     app.referenceCanvas = elements.referenceCanvas;
-    app.referenceCtx = app.referenceCanvas.getContext('2d');
+    app.referenceCtx = app.referenceCanvas.getContext('2d', { willReadFrequently: true });
 
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    // Tamaño fijo cuadrado de alta calidad
+    app.canvas.width = app.canvasSize;
+    app.canvas.height = app.canvasSize;
+    app.referenceCanvas.width = app.canvasSize;
+    app.referenceCanvas.height = app.canvasSize;
 
     app.ctx.lineCap = 'round';
     app.ctx.lineJoin = 'round';
     
-    saveToHistory();
+    resizeCanvas();
+    window.addEventListener('resize', debounce(resizeCanvas, 100));
+    
+    // Zoom con gestos táctiles
+    setupTouchZoom();
 }
 
 function resizeCanvas() {
     const container = app.canvas.parentElement;
     const rect = container.getBoundingClientRect();
     
-    // Usar casi todo el espacio disponible
-    const maxWidth = rect.width * 0.98;
-    const maxHeight = rect.height * 0.98;
+    // Calcular el tamaño de visualización (cuadrado que cabe en el contenedor)
+    const size = Math.min(rect.width, rect.height) * 0.95;
     
-    // Mantener aspecto 4:3 pero adaptable
-    let width = maxWidth;
-    let height = width * (3/4);
+    // Aplicar tamaño visual sin cambiar resolución interna
+    app.canvas.style.width = size + 'px';
+    app.canvas.style.height = size + 'px';
+    app.referenceCanvas.style.width = size + 'px';
+    app.referenceCanvas.style.height = size + 'px';
     
-    if (height > maxHeight) {
-        height = maxHeight;
-        width = height * (4/3);
-    }
+    // NO redibujamos nada aquí, los trazos se mantienen
+}
+
+function setupTouchZoom() {
+    let initialDistance = 0;
     
-    // Asegurar tamaño mínimo
-    width = Math.max(width, 400);
-    height = Math.max(height, 300);
+    app.canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            app.isPinching = true;
+            initialDistance = getDistance(e.touches[0], e.touches[1]);
+            e.preventDefault();
+        }
+    });
     
-    const imageData = app.canvas.width > 0 ? app.ctx.getImageData(0, 0, app.canvas.width, app.canvas.height) : null;
+    app.canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && app.isPinching) {
+            const currentDistance = getDistance(e.touches[0], e.touches[1]);
+            const scaleChange = currentDistance / initialDistance;
+            
+            app.scale = Math.max(0.5, Math.min(3, app.scale * scaleChange));
+            app.canvas.style.transform = `scale(${app.scale})`;
+            app.referenceCanvas.style.transform = `scale(${app.scale})`;
+            
+            initialDistance = currentDistance;
+            e.preventDefault();
+        }
+    });
     
-    app.canvas.width = width;
-    app.canvas.height = height;
-    app.referenceCanvas.width = width;
-    app.referenceCanvas.height = height;
-    
-    if (imageData && app.canvas.width >= imageData.width) {
-        app.ctx.putImageData(imageData, 0, 0);
-    }
-    
-    if (app.currentRoom) {
-        loadAllStrokes();
-    }
-    
-    if (app.referenceImage) {
-        drawReferenceImage();
-    }
+    app.canvas.addEventListener('touchend', () => {
+        app.isPinching = false;
+    });
+}
+
+function getDistance(touch1, touch2) {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
 }
 
 // =====================================================
@@ -350,23 +363,24 @@ function initializeReferencePresets() {
 }
 
 function loadReferencePreset(type) {
-    const width = app.referenceCanvas.width;
-    const height = app.referenceCanvas.height;
+    const width = app.canvasSize;
+    const height = app.canvasSize;
     
     app.referenceCtx.clearRect(0, 0, width, height);
+    app.referenceCtx.save();
     app.referenceCtx.strokeStyle = '#00d4ff';
-    app.referenceCtx.lineWidth = 2;
+    app.referenceCtx.lineWidth = 3;
     app.referenceCtx.globalAlpha = app.referenceOpacity;
     
     switch(type) {
         case 'circle':
-            const radius = Math.min(width, height) * 0.4;
+            const radius = width * 0.4;
             app.referenceCtx.beginPath();
             app.referenceCtx.arc(width/2, height/2, radius, 0, Math.PI * 2);
             app.referenceCtx.stroke();
             break;
         case 'grid':
-            const gridSize = 50;
+            const gridSize = 100;
             for(let x = 0; x <= width; x += gridSize) {
                 app.referenceCtx.beginPath();
                 app.referenceCtx.moveTo(x, 0);
@@ -400,7 +414,7 @@ function loadReferencePreset(type) {
             break;
     }
     
-    app.referenceCtx.globalAlpha = 1;
+    app.referenceCtx.restore();
     app.referenceImage = type;
     elements.clearReferenceBtn.disabled = false;
     
@@ -412,7 +426,6 @@ function loadReferencePreset(type) {
 // EVENT LISTENERS
 // =====================================================
 function setupEventListeners() {
-    // Sala
     elements.createRoomBtn.addEventListener('click', createRoom);
     elements.joinRoomBtn.addEventListener('click', () => {
         const roomId = elements.roomInput.value.trim();
@@ -436,27 +449,14 @@ function setupEventListeners() {
         if (e.key === 'Enter') elements.joinRoomBtn.click();
     });
 
-    // Herramientas
     elements.colorPicker.addEventListener('input', (e) => updateColor(e.target.value));
     elements.brushSize.addEventListener('input', (e) => updateBrushSize(parseInt(e.target.value)));
     elements.drawModeBtn.addEventListener('click', () => setMode('draw'));
     elements.eraserModeBtn.addEventListener('click', () => setMode('eraser'));
 
-    // Historial
-    elements.undoBtn.addEventListener('click', undo);
-    elements.redoBtn.addEventListener('click', redo);
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-            e.preventDefault();
-            undo();
-        }
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-            e.preventDefault();
-            redo();
-        }
-    });
+    elements.undoBtn.addEventListener('click', () => syncUndo());
+    elements.redoBtn.addEventListener('click', () => syncRedo());
 
-    // Referencias
     elements.uploadReferenceBtn.addEventListener('click', () => elements.referenceUpload.click());
     elements.referenceUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -482,7 +482,6 @@ function setupEventListeners() {
         if (app.referenceImage) drawReferenceImage();
     });
 
-    // Modales
     elements.closeUrlModal.addEventListener('click', closeUrlModal);
     elements.cancelUrlBtn.addEventListener('click', closeUrlModal);
     elements.loadUrlBtn.addEventListener('click', loadImageFromUrl);
@@ -494,11 +493,9 @@ function setupEventListeners() {
         if (e.target === elements.galleryModal) closeGalleryModal();
     });
 
-    // Acciones
     elements.clearCanvasBtn.addEventListener('click', clearCanvas);
     elements.downloadBtn.addEventListener('click', downloadCanvas);
 
-    // Canvas
     app.canvas.addEventListener('mousedown', startDrawing);
     app.canvas.addEventListener('mousemove', draw);
     app.canvas.addEventListener('mouseup', stopDrawing);
@@ -507,9 +504,19 @@ function setupEventListeners() {
     app.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     app.canvas.addEventListener('touchend', stopDrawing);
     
-    // Móvil
     elements.mobileMenuBtn.addEventListener('click', toggleMobileMenu);
     elements.toolbarOverlay.addEventListener('click', toggleMobileMenu);
+}
+
+function debounce(func, wait) {
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(app.debounceTimers[func.name]);
+            func(...args);
+        };
+        clearTimeout(app.debounceTimers[func.name]);
+        app.debounceTimers[func.name] = setTimeout(later, wait);
+    };
 }
 
 function toggleMobileMenu() {
@@ -518,7 +525,7 @@ function toggleMobileMenu() {
 }
 
 // =====================================================
-// GESTIÓN DE SALAS CON HEARTBEAT
+// GESTIÓN DE SALAS CON FECHA DE CREACIÓN
 // =====================================================
 function createRoom() {
     if (!database) {
@@ -527,11 +534,11 @@ function createRoom() {
     }
     
     const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
-    elements.roomInput.value = ''; // Limpiar input
-    joinRoom(roomId);
+    elements.roomInput.value = '';
+    joinRoom(roomId, true); // true = crear nueva sala
 }
 
-function joinRoom(roomId) {
+function joinRoom(roomId, isNew = false) {
     if (!database) {
         showToast('Error: Firebase no está conectado', 'error');
         return;
@@ -546,27 +553,27 @@ function joinRoom(roomId) {
     elements.roomInput.disabled = true;
     elements.canvasOverlay.classList.add('hidden');
 
-    // Actualizar UI de botones
     elements.joinRoomBtn.style.display = 'none';
     elements.createRoomBtn.style.display = 'none';
     elements.leaveRoomBtn.style.display = 'flex';
 
-    // Actualizar URL
     const url = new URL(window.location);
     url.searchParams.set('room', roomId);
     window.history.pushState({}, '', url);
 
-    // Limpiar canvas y historial
-    app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-    app.history = [];
-    app.historyStep = -1;
-    saveToHistory();
+    // Si es sala nueva, guardar metadata
+    if (isNew) {
+        database.ref(`rooms/${roomId}/metadata`).set({
+            created: firebase.database.ServerValue.TIMESTAMP,
+            createdBy: app.userId
+        });
+    }
 
-    // Configurar presencia con heartbeat
+    app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
+
     setupPresence();
-
-    // Cargar y escuchar trazos
     listenToStrokes();
+    listenToHistory(); // Escuchar historial sincronizado
     loadAllStrokes();
 
     showToast(`Conectado a sala: ${roomId}`, 'success');
@@ -578,17 +585,14 @@ function setupPresence() {
     const userRef = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
     const usersRef = database.ref(`rooms/${app.currentRoom}/users`);
     
-    // Establecer presencia inicial
     app.presenceRef = userRef;
     userRef.set({
         t: firebase.database.ServerValue.TIMESTAMP,
         heartbeat: firebase.database.ServerValue.TIMESTAMP
     }).catch(err => console.error('Error en presencia:', err));
 
-    // Configurar desconexión automática
     userRef.onDisconnect().remove();
 
-    // Heartbeat cada 5 segundos para mantener conexión
     if (app.heartbeatInterval) {
         clearInterval(app.heartbeatInterval);
     }
@@ -598,10 +602,7 @@ function setupPresence() {
             userRef.update({
                 heartbeat: firebase.database.ServerValue.TIMESTAMP
             }).catch(err => {
-                console.error('Error en heartbeat:', err);
-                // Si falla heartbeat, intentar reconectar
                 if (app.isConnected) {
-                    showToast('Reconectando...', 'warning');
                     userRef.set({
                         t: firebase.database.ServerValue.TIMESTAMP,
                         heartbeat: firebase.database.ServerValue.TIMESTAMP
@@ -611,7 +612,6 @@ function setupPresence() {
         }
     }, 5000);
 
-    // Escuchar cambios en usuarios
     usersRef.on('value', (snapshot) => {
         const users = snapshot.val();
         if (!users) {
@@ -619,62 +619,36 @@ function setupPresence() {
             return;
         }
         
-        // Filtrar usuarios con heartbeat reciente (últimos 15 segundos)
         const now = Date.now();
         const activeUsers = Object.entries(users).filter(([id, data]) => {
             return data.heartbeat && (now - data.heartbeat < 15000);
         });
         
-        const count = activeUsers.length;
-        elements.userCount.textContent = count;
-        
-        // Notificar cuando se une alguien
-        if (count >= 2 && count !== app.lastUserCount) {
-            showToast('¡Usuario conectado!', 'success');
-        }
-        app.lastUserCount = count;
+        elements.userCount.textContent = activeUsers.length;
     });
-
-    // Limpiar usuarios inactivos cada 30 segundos
-    setInterval(() => {
-        if (!app.currentRoom) return;
-        
-        usersRef.once('value', (snapshot) => {
-            const users = snapshot.val();
-            if (!users) return;
-            
-            const now = Date.now();
-            Object.entries(users).forEach(([userId, data]) => {
-                if (data.heartbeat && (now - data.heartbeat > 30000)) {
-                    database.ref(`rooms/${app.currentRoom}/users/${userId}`).remove();
-                }
-            });
-        });
-    }, 30000);
 }
 
 function leaveRoom() {
-    // Detener heartbeat
     if (app.heartbeatInterval) {
         clearInterval(app.heartbeatInterval);
         app.heartbeatInterval = null;
     }
     
-    // Detener listener de trazos
-    if (app.drawingListener) {
-        const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
-        strokesRef.off('child_added', app.drawingListener);
+    if (app.drawingListener && app.currentRoom) {
+        database.ref(`rooms/${app.currentRoom}/strokes`).off('child_added', app.drawingListener);
     }
     
-    // Remover presencia
-    if (app.presenceRef && database) {
+    if (app.historyListener && app.currentRoom) {
+        database.ref(`rooms/${app.currentRoom}/history`).off();
+    }
+    
+    if (app.presenceRef) {
         app.presenceRef.remove();
     }
 
     app.currentRoom = null;
     app.presenceRef = null;
     
-    // Actualizar UI
     elements.roomInput.value = '';
     elements.roomInput.disabled = false;
     elements.canvasOverlay.classList.remove('hidden');
@@ -683,7 +657,6 @@ function leaveRoom() {
     elements.leaveRoomBtn.style.display = 'none';
     elements.userCount.textContent = '0';
     
-    // Limpiar URL
     const url = new URL(window.location);
     url.searchParams.delete('room');
     window.history.pushState({}, '', url);
@@ -696,7 +669,6 @@ function updateConnectionStatus(connected) {
         elements.statusDot.classList.remove('disconnected');
         elements.statusText.textContent = 'Conectado';
         
-        // Si estaba en sala, restablecer presencia
         if (app.currentRoom && app.presenceRef) {
             app.presenceRef.set({
                 t: firebase.database.ServerValue.TIMESTAMP,
@@ -719,6 +691,8 @@ function startDrawing(e) {
         return;
     }
     
+    if (app.isPinching) return;
+    
     app.isDrawing = true;
     const pos = getMousePos(e);
     app.lastX = Math.round(pos.x);
@@ -727,7 +701,7 @@ function startDrawing(e) {
 }
 
 function draw(e) {
-    if (!app.isDrawing || !app.currentRoom) return;
+    if (!app.isDrawing || !app.currentRoom || app.isPinching) return;
     
     const pos = getMousePos(e);
     const x = Math.round(pos.x);
@@ -754,7 +728,8 @@ function stopDrawing() {
         sendStrokeBatch();
     }
     
-    saveToHistory();
+    // Guardar historial sincronizado
+    saveToSyncHistory();
 }
 
 function drawLine(x1, y1, x2, y2, color, size, isEraser = false) {
@@ -768,8 +743,8 @@ function drawLine(x1, y1, x2, y2, color, size, isEraser = false) {
 
 function getMousePos(e) {
     const rect = app.canvas.getBoundingClientRect();
-    const scaleX = app.canvas.width / rect.width;
-    const scaleY = app.canvas.height / rect.height;
+    const scaleX = app.canvasSize / rect.width;
+    const scaleY = app.canvasSize / rect.height;
     
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
@@ -781,6 +756,7 @@ function getMousePos(e) {
 }
 
 function handleTouchStart(e) {
+    if (e.touches.length === 2) return; // Zoom
     e.preventDefault();
     const touch = e.touches[0];
     const mouseEvent = new MouseEvent('mousedown', {
@@ -791,6 +767,7 @@ function handleTouchStart(e) {
 }
 
 function handleTouchMove(e) {
+    if (e.touches.length === 2) return; // Zoom
     e.preventDefault();
     const touch = e.touches[0];
     const mouseEvent = new MouseEvent('mousemove', {
@@ -841,7 +818,7 @@ function loadAllStrokes() {
     const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
     
     strokesRef.once('value', (snapshot) => {
-        app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
+        app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
         
         snapshot.forEach((childSnapshot) => {
             const stroke = childSnapshot.val();
@@ -851,8 +828,6 @@ function loadAllStrokes() {
                 });
             }
         });
-        
-        saveToHistory();
     }).catch(err => {
         console.error('Error al cargar trazos:', err);
         showToast('Error al cargar dibujos', 'error');
@@ -860,53 +835,118 @@ function loadAllStrokes() {
 }
 
 // =====================================================
-// HISTORIAL
+// HISTORIAL SINCRONIZADO (20 PASOS)
 // =====================================================
-function saveToHistory() {
-    if (app.historyStep < app.history.length - 1) {
-        app.history = app.history.slice(0, app.historyStep + 1);
-    }
+function saveToSyncHistory() {
+    if (!app.currentRoom || !database) return;
     
-    app.history.push(app.canvas.toDataURL());
-    app.historyStep++;
+    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
+    const imageData = app.canvas.toDataURL('image/png', 0.8);
     
-    if (app.history.length > app.maxHistory) {
-        app.history.shift();
-        app.historyStep--;
-    }
-    
-    updateHistoryButtons();
+    // Obtener historial actual
+    historyRef.once('value', (snapshot) => {
+        let history = snapshot.val() || { states: [], step: -1 };
+        
+        // Si estamos en medio del historial, eliminar estados futuros
+        if (history.step < history.states.length - 1) {
+            history.states = history.states.slice(0, history.step + 1);
+        }
+        
+        // Agregar nuevo estado
+        history.states.push(imageData);
+        history.step++;
+        
+        // Limitar a 20 estados
+        if (history.states.length > 20) {
+            history.states.shift();
+            history.step--;
+        }
+        
+        historyRef.set(history);
+        updateHistoryButtons();
+    });
 }
 
-function undo() {
-    if (app.historyStep > 0) {
-        app.historyStep--;
-        restoreFromHistory();
-    }
+function listenToHistory() {
+    if (!database || !app.currentRoom) return;
+    
+    const historyRef = database.ref(`rooms/${app.currentRoom}/history/step`);
+    
+    app.historyListener = historyRef.on('value', (snapshot) => {
+        updateHistoryButtons();
+    });
 }
 
-function redo() {
-    if (app.historyStep < app.history.length - 1) {
-        app.historyStep++;
-        restoreFromHistory();
-    }
+function syncUndo() {
+    if (!app.currentRoom || !database) return;
+    
+    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
+    
+    historyRef.once('value', (snapshot) => {
+        const history = snapshot.val();
+        if (!history || history.step <= 0) return;
+        
+        history.step--;
+        historyRef.set(history).then(() => {
+            restoreFromSyncHistory(history.step);
+        });
+    });
 }
 
-function restoreFromHistory() {
-    if (app.history[app.historyStep]) {
-        const img = new Image();
-        img.src = app.history[app.historyStep];
-        img.onload = () => {
-            app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-            app.ctx.drawImage(img, 0, 0);
-        };
-    }
+function syncRedo() {
+    if (!app.currentRoom || !database) return;
+    
+    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
+    
+    historyRef.once('value', (snapshot) => {
+        const history = snapshot.val();
+        if (!history || history.step >= history.states.length - 1) return;
+        
+        history.step++;
+        historyRef.set(history).then(() => {
+            restoreFromSyncHistory(history.step);
+        });
+    });
+}
+
+function restoreFromSyncHistory(step) {
+    const historyRef = database.ref(`rooms/${app.currentRoom}/history/states/${step}`);
+    
+    historyRef.once('value', (snapshot) => {
+        const imageData = snapshot.val();
+        if (imageData) {
+            const img = new Image();
+            img.onload = () => {
+                app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
+                app.ctx.drawImage(img, 0, 0);
+            };
+            img.src = imageData;
+        }
+    });
 }
 
 function updateHistoryButtons() {
-    elements.undoBtn.disabled = app.historyStep <= 0;
-    elements.redoBtn.disabled = app.historyStep >= app.history.length - 1;
+    if (!app.currentRoom || !database) {
+        elements.undoBtn.disabled = true;
+        elements.redoBtn.disabled = true;
+        return;
+    }
+    
+    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
+    
+    historyRef.once('value', (snapshot) => {
+        const history = snapshot.val();
+        if (!history) {
+            elements.undoBtn.disabled = true;
+            elements.redoBtn.disabled = true;
+            return;
+        }
+        
+        elements.undoBtn.disabled = history.step <= 0;
+        elements.redoBtn.disabled = history.step >= history.states.length - 1;
+    });
 }
+
 
 // =====================================================
 // MODALES Y REFERENCIAS
@@ -927,10 +967,6 @@ function loadImageFromUrl() {
     if (!url) {
         showToast('Ingresa una URL válida', 'error');
         return;
-    }
-    
-    if (!url.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) && !url.includes('imgur') && !url.includes('image')) {
-        showToast('La URL debe ser una imagen válida', 'warning');
     }
     
     const img = new Image();
@@ -963,11 +999,10 @@ function closeGalleryModal() {
 function loadGallery() {
     elements.galleryGrid.innerHTML = '<div class="gallery-item-loading">Cargando galería...</div>';
     
-    // Simular carga (en producción cargarías desde servidor/BD)
     setTimeout(() => {
         elements.galleryGrid.innerHTML = '';
         
-        IMAGE_GALLERY.forEach((item, index) => {
+        IMAGE_GALLERY.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'gallery-item';
             
@@ -985,7 +1020,7 @@ function loadGallery() {
             
             elements.galleryGrid.appendChild(div);
         });
-    }, 500);
+    }, 300);
 }
 
 function loadGalleryImage(url) {
@@ -1034,19 +1069,19 @@ function loadReferenceImage(file) {
 function drawReferenceImage() {
     if (!app.referenceImage) return;
     
-    const width = app.referenceCanvas.width;
-    const height = app.referenceCanvas.height;
+    const width = app.canvasSize;
+    const height = app.canvasSize;
     
     app.referenceCtx.clearRect(0, 0, width, height);
+    app.referenceCtx.save();
     app.referenceCtx.globalAlpha = app.referenceOpacity;
     
     if (app.referenceImage instanceof HTMLImageElement) {
         const imgRatio = app.referenceImage.width / app.referenceImage.height;
-        const canvasRatio = width / height;
         
         let drawWidth, drawHeight, offsetX, offsetY;
         
-        if (imgRatio > canvasRatio) {
+        if (imgRatio > 1) {
             drawWidth = width;
             drawHeight = width / imgRatio;
             offsetX = 0;
@@ -1059,9 +1094,11 @@ function drawReferenceImage() {
         }
         
         app.referenceCtx.drawImage(app.referenceImage, offsetX, offsetY, drawWidth, drawHeight);
+    } else if (typeof app.referenceImage === 'string') {
+        // Es una referencia predeterminada, ya está dibujada
     }
     
-    app.referenceCtx.globalAlpha = 1;
+    app.referenceCtx.restore();
 }
 
 function clearReference() {
@@ -1071,7 +1108,7 @@ function clearReference() {
     }
     
     app.referenceImage = null;
-    app.referenceCtx.clearRect(0, 0, app.referenceCanvas.width, app.referenceCanvas.height);
+    app.referenceCtx.clearRect(0, 0, app.canvasSize, app.canvasSize);
     elements.referenceUpload.value = '';
     elements.clearReferenceBtn.disabled = true;
     
@@ -1081,7 +1118,6 @@ function clearReference() {
     
     showToast('Referencia eliminada', 'success');
 }
-
 
 // =====================================================
 // HERRAMIENTAS
@@ -1124,10 +1160,8 @@ function clearCanvas() {
     if (confirm('¿Estás seguro de limpiar el lienzo? Esto afectará a todos los usuarios.')) {
         database.ref(`rooms/${app.currentRoom}/strokes`).remove()
             .then(() => {
-                app.ctx.clearRect(0, 0, app.canvas.width, app.canvas.height);
-                app.history = [];
-                app.historyStep = -1;
-                saveToHistory();
+                database.ref(`rooms/${app.currentRoom}/history`).remove();
+                app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
                 showToast('Lienzo limpiado', 'success');
             })
             .catch(err => {
@@ -1141,7 +1175,7 @@ function downloadCanvas() {
     try {
         const link = document.createElement('a');
         link.download = `neondraw-${Date.now()}.png`;
-        link.href = app.canvas.toDataURL();
+        link.href = app.canvas.toDataURL('image/png');
         link.click();
         showToast('Imagen descargada', 'success');
     } catch (err) {
@@ -1166,7 +1200,14 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+// =====================================================
+// CLEANUP
+// =====================================================
+window.addEventListener('beforeunload', () => {
+    leaveRoom();
+});
+
 // Log de inicio
-console.log('%cNeonDraw v2.1 cargado ✅', 'color: #00ff88; font-size: 16px; font-weight: bold;');
-console.log('%cRecuerda configurar Firebase!', 'color: #00d4ff; font-size: 14px;');
+console.log('%cNeonDraw v3.0 cargado ✅', 'color: #00ff88; font-size: 16px; font-weight: bold;');
+console.log('%c✨ Canvas cuadrado | Historial sincronizado | Zoom táctil', 'color: #00d4ff; font-size: 12px;');
 
