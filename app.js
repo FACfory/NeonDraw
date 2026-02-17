@@ -2,79 +2,82 @@
 // CONFIGURACIÓN DE FIREBASE
 // =====================================================
 const firebaseConfig = {
-            apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w",
-            authDomain: "neondraw-app-gem.firebaseapp.com",
-            databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
-            projectId: "neondraw-app-gem",
-            storageBucket: "neondraw-app-gem.firebasestorage.app",
-            messagingSenderId: "611346212206",
-            appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
-            measurementId: "G-E366ZD3J90"
-        };
+    apiKey: "TU_API_KEY_AQUI",
+    authDomain: "tu-proyecto.firebaseapp.com",
+    databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+    projectId: "tu-proyecto",
+    storageBucket: "tu-proyecto.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef123456"
+};
 
 let database = null;
 
 // =====================================================
-// GALERÍA DE IMÁGENES PREDEFINIDAS
+// CONSTANTES
 // =====================================================
 const IMAGE_GALLERY = [
-    { name: 'Anatomía Mano', url: 'https://i.imgur.com/2qX8KpR.jpg' },
-    { name: 'Rostro Proporciones', url: 'https://i.imgur.com/8YJC9Qh.jpg' },
-    { name: 'Cuerpo Humano', url: 'https://i.imgur.com/5zKx9Yh.jpg' },
-    { name: 'Perspectiva Ciudad', url: 'https://i.imgur.com/7tKmN4R.jpg' },
-    { name: 'Animales', url: 'https://i.imgur.com/9pLmQ2X.jpg' },
-    { name: 'Poses Dinámicas', url: 'https://i.imgur.com/3wRtY5K.jpg' }
+    { name: 'Gato',    url: 'https://i.pinimg.com/736x/2f/01/09/2f010980a035d7562974e57a08b31a94.jpg' },
+    { name: 'Casa',    url: 'https://i.pinimg.com/736x/40/b2/5c/40b25c9f1fe9eb0716efde8eb71d953d.jpg' },
+    { name: 'Arbol',   url: 'https://i.pinimg.com/736x/41/91/8b/41918b5871d2f96753252ffcade9aa62.jpg' },
+    { name: 'Flor',    url: 'https://i.pinimg.com/736x/e4/ed/a3/e4eda33b2c9e9c6b26761ba92242cbb2.jpg' },
+    { name: 'Girasol', url: 'https://i.pinimg.com/564x/3d/c4/d0/3dc4d0650936aaf13cbc9f0e2dbd4e7c.jpg' },
+    { name: 'Paisaje', url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771283666/10f1cade-2568-4e6a-945c-dd81a1179285.png' }
 ];
 
 const PALETTES = [
-    { name: 'Neón', colors: ['#00ff88', '#00d4ff', '#ff00ff', '#ffff00', '#ff0066', '#ffffff'] },
-    { name: 'Pastel', colors: ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#E0BBE4'] },
-    { name: 'Tierra', colors: ['#8B4513', '#D2691E', '#CD853F', '#DEB887', '#F4A460', '#BC8F8F'] },
-    { name: 'Océano', colors: ['#006994', '#0091AD', '#4FB0C6', '#7AC7CD', '#A1D6E2', '#B9DFEA'] },
-    { name: 'Fuego', colors: ['#8B0000', '#DC143C', '#FF4500', '#FF6347', '#FF7F50', '#FFA07A'] },
-    { name: 'Bosque', colors: ['#013220', '#228B22', '#32CD32', '#90EE90', '#98FB98', '#F0FFF0'] }
+    { name: 'Neón',    colors: ['#00ff88','#00d4ff','#ff00ff','#ffff00','#ff0066','#ffffff'] },
+    { name: 'Pastel',  colors: ['#FFB3BA','#FFDFBA','#FFFFBA','#BAFFC9','#BAE1FF','#E0BBE4'] },
+    { name: 'Tierra',  colors: ['#8B4513','#D2691E','#CD853F','#DEB887','#F4A460','#BC8F8F'] },
+    { name: 'Océano',  colors: ['#006994','#0091AD','#4FB0C6','#7AC7CD','#A1D6E2','#B9DFEA'] },
+    { name: 'Fuego',   colors: ['#8B0000','#DC143C','#FF4500','#FF6347','#FF7F50','#FFA07A'] },
+    { name: 'Bosque',  colors: ['#013220','#228B22','#32CD32','#90EE90','#98FB98','#F0FFF0'] }
 ];
 
 const REFERENCE_PRESETS = [
-    { name: 'Círculo', type: 'circle' },
-    { name: 'Cuadrícula', type: 'grid' },
-    { name: 'Guías', type: 'guides' },
+    { name: 'Círculo',     type: 'circle' },
+    { name: 'Cuadrícula',  type: 'grid' },
+    { name: 'Guías',       type: 'guides' },
     { name: 'Perspectiva', type: 'perspective' }
 ];
 
 // =====================================================
-// ESTADO DE LA APLICACIÓN
+// ESTADO
 // =====================================================
 const app = {
-    currentRoom: null,
-    userId: 'user-' + Math.random().toString(36).substr(2, 9),
-    isDrawing: false,
-    lastX: 0,
-    lastY: 0,
-    currentColor: '#00ff88',
-    brushSize: 3,
-    isEraser: false,
-    canvas: null,
-    ctx: null,
-    referenceCanvas: null,
-    referenceCtx: null,
+    currentRoom:  null,
+    userId:       'user-' + Math.random().toString(36).substr(2, 9),
+    isDrawing:    false,
+    lastX: 0, lastY: 0,
+    currentColor: '#000000',
+    brushSize:    3,
+    isEraser:     false,
+
+    // Tres canvas
+    bgCanvas:        null, bgCtx:        null,
+    referenceCanvas: null, referenceCtx: null,
+    canvas:          null, ctx:          null,
+
     drawingListener: null,
-    historyListener: null,
-    currentStroke: [],
-    lastEmitTime: 0,
-    emitThrottle: 50,
-    referenceImage: null,
+    currentStroke:   [],
+    lastEmitTime:    0,
+    emitThrottle:    50,
+
+    referenceImage:   null,
     referenceOpacity: 0.5,
-    currentPalette: 0,
-    isConnected: false,
-    presenceRef: null,
-    heartbeatInterval: null,
-    canvasSize: 1000, // Tamaño cuadrado fijo
+    currentPalette:   0,
+    isConnected:      false,
+    presenceRef:      null,
+    heartbeatInterval:null,
+
+    canvasSize: 1000,   // Resolución interna fija
+    displaySize: 0,     // Tamaño visual calculado en resizeCanvas
+
+    // Zoom con offset manual
     scale: 1,
-    translateX: 0,
-    translateY: 0,
-    isPinching: false,
-    lastDistance: 0,
+    offsetX: 0,
+    offsetY: 0,
+
     debounceTimers: {}
 };
 
@@ -82,581 +85,492 @@ const app = {
 // ELEMENTOS DEL DOM
 // =====================================================
 const elements = {
-    loadingScreen: document.getElementById('loading-screen'),
-    appContainer: document.getElementById('app'),
-    canvas: document.getElementById('drawing-canvas'),
-    referenceCanvas: document.getElementById('reference-canvas'),
-    canvasOverlay: document.getElementById('canvas-overlay'),
-    roomInput: document.getElementById('room-id'),
-    joinRoomBtn: document.getElementById('join-room-btn'),
-    createRoomBtn: document.getElementById('create-room-btn'),
-    leaveRoomBtn: document.getElementById('leave-room-btn'),
-    clearCanvasBtn: document.getElementById('clear-canvas-btn'),
-    downloadBtn: document.getElementById('download-btn'),
-    colorPicker: document.getElementById('color-picker'),
-    colorPreview: document.getElementById('color-preview'),
-    brushSize: document.getElementById('brush-size'),
-    brushSizeValue: document.getElementById('brush-size-value'),
-    brushIndicator: document.getElementById('brush-indicator'),
-    drawModeBtn: document.getElementById('draw-mode'),
-    eraserModeBtn: document.getElementById('eraser-mode'),
-    userCount: document.getElementById('user-count'),
-    toastContainer: document.getElementById('toast-container'),
-    statusDot: document.getElementById('status-dot'),
-    statusText: document.getElementById('status-text'),
-    undoBtn: document.getElementById('undo-btn'),
-    redoBtn: document.getElementById('redo-btn'),
-    uploadReferenceBtn: document.getElementById('upload-reference-btn'),
-    referenceUpload: document.getElementById('reference-upload'),
+    loadingScreen:       document.getElementById('loading-screen'),
+    appContainer:        document.getElementById('app'),
+    bgCanvas:            document.getElementById('bg-canvas'),
+    referenceCanvas:     document.getElementById('reference-canvas'),
+    canvas:              document.getElementById('drawing-canvas'),
+    canvasOverlay:       document.getElementById('canvas-overlay'),
+    roomInput:           document.getElementById('room-id'),
+    joinRoomBtn:         document.getElementById('join-room-btn'),
+    createRoomBtn:       document.getElementById('create-room-btn'),
+    leaveRoomBtn:        document.getElementById('leave-room-btn'),
+    clearCanvasBtn:      document.getElementById('clear-canvas-btn'),
+    downloadBtn:         document.getElementById('download-btn'),
+    colorPicker:         document.getElementById('color-picker'),
+    colorPreview:        document.getElementById('color-preview'),
+    brushSize:           document.getElementById('brush-size'),
+    brushSizeValue:      document.getElementById('brush-size-value'),
+    brushIndicator:      document.getElementById('brush-indicator'),
+    drawModeBtn:         document.getElementById('draw-mode'),
+    eraserModeBtn:       document.getElementById('eraser-mode'),
+    userCount:           document.getElementById('user-count'),
+    toastContainer:      document.getElementById('toast-container'),
+    statusDot:           document.getElementById('status-dot'),
+    statusText:          document.getElementById('status-text'),
+    uploadReferenceBtn:  document.getElementById('upload-reference-btn'),
+    referenceUpload:     document.getElementById('reference-upload'),
     loadUrlReferenceBtn: document.getElementById('load-url-reference-btn'),
     galleryReferenceBtn: document.getElementById('gallery-reference-btn'),
-    clearReferenceBtn: document.getElementById('clear-reference-btn'),
-    referenceOpacity: document.getElementById('reference-opacity'),
-    referenceOpacityValue: document.getElementById('reference-opacity-value'),
-    referencePresets: document.getElementById('reference-presets'),
-    palettesList: document.getElementById('palettes-list'),
-    presetColors: document.getElementById('preset-colors'),
-    mobileMenuBtn: document.getElementById('mobile-menu-btn'),
-    toolbar: document.getElementById('toolbar'),
-    toolbarOverlay: document.getElementById('toolbar-overlay'),
-    urlModal: document.getElementById('url-modal'),
-    galleryModal: document.getElementById('gallery-modal'),
-    imageUrlInput: document.getElementById('image-url-input'),
-    loadUrlBtn: document.getElementById('load-url-btn'),
-    cancelUrlBtn: document.getElementById('cancel-url-btn'),
-    closeUrlModal: document.getElementById('close-url-modal'),
-    closeGalleryModal: document.getElementById('close-gallery-modal'),
-    galleryGrid: document.getElementById('gallery-grid')
+    clearReferenceBtn:   document.getElementById('clear-reference-btn'),
+    referenceOpacity:    document.getElementById('reference-opacity'),
+    referenceOpacityValue:document.getElementById('reference-opacity-value'),
+    referencePresets:    document.getElementById('reference-presets'),
+    palettesList:        document.getElementById('palettes-list'),
+    presetColors:        document.getElementById('preset-colors'),
+    mobileMenuBtn:       document.getElementById('mobile-menu-btn'),
+    toolbar:             document.getElementById('toolbar'),
+    toolbarOverlay:      document.getElementById('toolbar-overlay'),
+    urlModal:            document.getElementById('url-modal'),
+    galleryModal:        document.getElementById('gallery-modal'),
+    imageUrlInput:       document.getElementById('image-url-input'),
+    loadUrlBtn:          document.getElementById('load-url-btn'),
+    cancelUrlBtn:        document.getElementById('cancel-url-btn'),
+    closeUrlModal:       document.getElementById('close-url-modal'),
+    closeGalleryModal:   document.getElementById('close-gallery-modal'),
+    galleryGrid:         document.getElementById('gallery-grid')
 };
 
 // =====================================================
-// INICIALIZACIÓN
+// ARRANQUE
 // =====================================================
 window.addEventListener('load', () => {
     try {
         firebase.initializeApp(firebaseConfig);
         database = firebase.database();
-        
-        const connectedRef = database.ref('.info/connected');
-        connectedRef.on('value', (snap) => {
-            updateConnectionStatus(snap.val() === true);
-        });
-        
+        database.ref('.info/connected').on('value', snap => updateConnectionStatus(snap.val() === true));
         updateConnectionStatus(true);
-    } catch (error) {
-        console.error('Error al inicializar Firebase:', error);
+    } catch (e) {
+        console.error('Firebase error:', e);
         updateConnectionStatus(false);
-        showToast('Error al conectar con Firebase. Revisa la configuración.', 'error');
+        showToast('Error al conectar con Firebase', 'error');
     }
-    
+
     setTimeout(() => {
         elements.loadingScreen.classList.add('hidden');
         elements.appContainer.style.display = 'flex';
-        initializeCanvas();
-        setupEventListeners();
-        initializePalettes();
-        initializeReferencePresets();
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomFromUrl = urlParams.get('room');
-        if (roomFromUrl) {
-            elements.roomInput.value = roomFromUrl;
-            joinRoom(roomFromUrl);
-        }
+        initCanvas();
+        setupEvents();
+        initPalettes();
+        initRefPresets();
+
+        const room = new URLSearchParams(window.location.search).get('room');
+        if (room) { elements.roomInput.value = room; joinRoom(room); }
     }, 1500);
 });
 
 // =====================================================
-// CANVAS CON willReadFrequently
+// CANVAS — TRES CAPAS
 // =====================================================
-function initializeCanvas() {
-    app.canvas = elements.canvas;
-    app.ctx = app.canvas.getContext('2d', { willReadFrequently: true });
+function initCanvas() {
+    // Guardar referencias
+    app.bgCanvas        = elements.bgCanvas;
     app.referenceCanvas = elements.referenceCanvas;
+    app.canvas          = elements.canvas;
+
+    app.bgCtx        = app.bgCanvas.getContext('2d', { willReadFrequently: true });
     app.referenceCtx = app.referenceCanvas.getContext('2d', { willReadFrequently: true });
+    app.ctx          = app.canvas.getContext('2d', { willReadFrequently: true });
 
-    // Tamaño fijo cuadrado de alta calidad
-    app.canvas.width = app.canvasSize;
-    app.canvas.height = app.canvasSize;
-    app.referenceCanvas.width = app.canvasSize;
-    app.referenceCanvas.height = app.canvasSize;
+    // Resolución interna fija en los tres
+    [app.bgCanvas, app.referenceCanvas, app.canvas].forEach(c => {
+        c.width  = app.canvasSize;
+        c.height = app.canvasSize;
+    });
 
-    app.ctx.lineCap = 'round';
+    app.ctx.lineCap  = 'round';
     app.ctx.lineJoin = 'round';
-    
+
+    // El fondo del bgCanvas es blanco permanente
+    app.bgCtx.fillStyle = '#ffffff';
+    app.bgCtx.fillRect(0, 0, app.canvasSize, app.canvasSize);
+
     resizeCanvas();
-    window.addEventListener('resize', debounce(resizeCanvas, 100));
-    
-    // Zoom con gestos táctiles
-    setupTouchZoom();
+    window.addEventListener('resize', debounce(resizeCanvas, 120));
+    setupZoom();
 }
 
 function resizeCanvas() {
     const container = app.canvas.parentElement;
     const rect = container.getBoundingClientRect();
-    
-    // Calcular el tamaño de visualización (cuadrado que cabe en el contenedor)
-    const size = Math.min(rect.width, rect.height) * 0.95;
-    
-    // Aplicar tamaño visual sin cambiar resolución interna
-    app.canvas.style.width = size + 'px';
-    app.canvas.style.height = size + 'px';
-    app.referenceCanvas.style.width = size + 'px';
-    app.referenceCanvas.style.height = size + 'px';
-    
-    // NO redibujamos nada aquí, los trazos se mantienen
+    const size = Math.floor(Math.min(rect.width, rect.height) * 0.95);
+
+    app.displaySize = size;
+
+    // Solo tamaño visual — resolución interna NO cambia
+    [app.bgCanvas, app.referenceCanvas, app.canvas].forEach(c => {
+        c.style.width  = size + 'px';
+        c.style.height = size + 'px';
+        // Centrar respecto al wrapper
+        c.style.left = ((rect.width  - size) / 2) + 'px';
+        c.style.top  = ((rect.height - size) / 2) + 'px';
+    });
 }
 
-function setupTouchZoom() {
-    let initialDistance = 0;
-    
-    app.canvas.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-            app.isPinching = true;
-            initialDistance = getDistance(e.touches[0], e.touches[1]);
+// =====================================================
+// ZOOM — transform-origin dinámico (rueda + pinch)
+// =====================================================
+// ZOOM + TOUCH UNIFICADO
+// Toda la lógica touch vive aquí para evitar conflictos
+// =====================================================
+function setupZoom() {
+    const container = app.canvas.parentElement;
+
+    // ── Rueda del ratón ──────────────────────────────
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor   = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+        const newScale = Math.max(0.25, Math.min(8, app.scale * factor));
+        const rect     = app.canvas.getBoundingClientRect();
+        zoomAt(
+            (e.clientX - rect.left) / rect.width,
+            (e.clientY - rect.top)  / rect.height,
+            newScale
+        );
+    }, { passive: false });
+
+    // ── Touch unificado ──────────────────────────────
+    // Estado del pinch
+    let pinchActive    = false;
+    let pinchStartScale = 1;
+    let pinchStartDist  = 1;
+    let pinchOriginX    = 0.5;
+    let pinchOriginY    = 0.5;
+
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            // ─ 1 dedo: iniciar dibujo
             e.preventDefault();
-        }
-    });
-    
-    app.canvas.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2 && app.isPinching) {
-            const currentDistance = getDistance(e.touches[0], e.touches[1]);
-            const scaleChange = currentDistance / initialDistance;
-            
-            app.scale = Math.max(0.5, Math.min(3, app.scale * scaleChange));
-            app.canvas.style.transform = `scale(${app.scale})`;
-            app.referenceCanvas.style.transform = `scale(${app.scale})`;
-            
-            initialDistance = currentDistance;
+            pinchActive = false;
+            startDrawing(e.touches[0]);
+        } else if (e.touches.length === 2) {
+            // ─ 2 dedos: iniciar pinch, cancelar dibujo
             e.preventDefault();
+            pinchActive = true;
+            stopDrawing();                          // cancelar trazo en curso
+
+            pinchStartScale = app.scale;
+            pinchStartDist  = getDistance(e.touches[0], e.touches[1]);
+
+            const rect   = app.canvas.getBoundingClientRect();
+            const midX   = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const midY   = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            pinchOriginX = (midX - rect.left) / rect.width;
+            pinchOriginY = (midY - rect.top)  / rect.height;
         }
-    });
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+
+        if (e.touches.length === 1 && !pinchActive) {
+            // ─ 1 dedo: dibujar
+            draw(e.touches[0]);
+        } else if (e.touches.length === 2) {
+            // ─ 2 dedos: zoom
+            pinchActive = true;
+            const dist     = getDistance(e.touches[0], e.touches[1]);
+            const newScale = Math.max(0.25, Math.min(8,
+                pinchStartScale * (dist / pinchStartDist)));
+
+            const rect   = app.canvas.getBoundingClientRect();
+            const midX   = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const midY   = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            pinchOriginX = (midX - rect.left) / rect.width;
+            pinchOriginY = (midY - rect.top)  / rect.height;
+
+            zoomAt(pinchOriginX, pinchOriginY, newScale);
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 0) {
+            pinchActive = false;
+            stopDrawing();
+        } else if (e.touches.length === 1 && pinchActive) {
+            // Quedó 1 dedo después del pinch → no dibujar todavía
+            pinchActive = false;
+        }
+    }, { passive: false });
+}
+
+/**
+ * Hace zoom a un punto específico del canvas.
+ * ox, oy: fracción 0..1 relativa al canvas visible
+ * newScale: escala deseada
+ */
+function zoomAt(ox, oy, newScale) {
+    const rect = app.canvas.getBoundingClientRect();
     
-    app.canvas.addEventListener('touchend', () => {
-        app.isPinching = false;
+    // Punto en coordenadas del viewport donde queremos mantener fijo el zoom
+    const fixedX = rect.left + (ox * rect.width);
+    const fixedY = rect.top  + (oy * rect.height);
+    
+    // Centro del contenedor en coordenadas del viewport
+    const container = app.canvas.parentElement.getBoundingClientRect();
+    const centerX = container.left + (container.width  / 2);
+    const centerY = container.top  + (container.height / 2);
+    
+    // Cuánto se mueve el punto fijo respecto al centro del contenedor
+    const beforeX = fixedX - centerX;
+    const beforeY = fixedY - centerY;
+    
+    // Después del zoom, ese mismo punto debe estar en el mismo lugar en pantalla
+    // Fórmula: newOffset = currentOffset + (point - center) * (1 - scaleChange)
+    const scaleChange = newScale / app.scale;
+    
+    app.offsetX = app.offsetX + beforeX * (1 - scaleChange);
+    app.offsetY = app.offsetY + beforeY * (1 - scaleChange);
+    app.scale   = newScale;
+    
+    applyTransform();
+}
+
+function applyTransform() {
+    const transform = `translate(${app.offsetX}px, ${app.offsetY}px) scale(${app.scale})`;
+    [app.bgCanvas, app.referenceCanvas, app.canvas].forEach(c => {
+        c.style.transformOrigin = '50% 50%';  // siempre desde el centro
+        c.style.transform = transform;
     });
 }
 
-function getDistance(touch1, touch2) {
-    const dx = touch1.clientX - touch2.clientX;
-    const dy = touch1.clientY - touch2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
+function resetZoom() {
+    app.scale = 1;
+    app.offsetX = 0;
+    app.offsetY = 0;
+    applyTransform();
+    showToast('Zoom reseteado', 'success');
 }
 
 // =====================================================
-// PALETAS Y REFERENCIAS
+// COORDENADAS DEL MOUSE (correctas con zoom)
 // =====================================================
-function initializePalettes() {
-    PALETTES.forEach((palette, index) => {
-        const paletteEl = document.createElement('div');
-        paletteEl.className = 'palette-item' + (index === 0 ? ' active' : '');
-        paletteEl.dataset.index = index;
-        
-        const colorsDiv = document.createElement('div');
-        colorsDiv.className = 'palette-colors';
-        
-        palette.colors.forEach(color => {
-            const dot = document.createElement('div');
-            dot.className = 'palette-color-dot';
-            dot.style.background = color;
-            colorsDiv.appendChild(dot);
-        });
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'palette-name';
-        nameSpan.textContent = palette.name;
-        
-        paletteEl.appendChild(colorsDiv);
-        paletteEl.appendChild(nameSpan);
-        paletteEl.addEventListener('click', () => selectPalette(index));
-        
-        elements.palettesList.appendChild(paletteEl);
-    });
-    
-    loadPaletteColors(0);
-}
+function getMousePos(e) {
+    const rect = app.canvas.getBoundingClientRect();
+    const clientX = e.clientX ?? e.touches?.[0].clientX;
+    const clientY = e.clientY ?? e.touches?.[0].clientY;
 
-function selectPalette(index) {
-    app.currentPalette = index;
-    document.querySelectorAll('.palette-item').forEach((el, i) => {
-        el.classList.toggle('active', i === index);
-    });
-    loadPaletteColors(index);
-}
+    // getBoundingClientRect ya incluye la transformación CSS aplicada
+    // así que solo necesitamos escalar de px-visual a px-interno
+    const scaleX = app.canvasSize / rect.width;
+    const scaleY = app.canvasSize / rect.height;
 
-function loadPaletteColors(index) {
-    const palette = PALETTES[index];
-    elements.presetColors.innerHTML = '';
-    
-    palette.colors.forEach(color => {
-        const btn = document.createElement('button');
-        btn.className = 'color-preset';
-        btn.dataset.color = color;
-        btn.style.background = color;
-        btn.addEventListener('click', () => {
-            updateColor(color);
-            elements.colorPicker.value = color;
-        });
-        elements.presetColors.appendChild(btn);
-    });
-}
-
-function initializeReferencePresets() {
-    REFERENCE_PRESETS.forEach(preset => {
-        const btn = document.createElement('div');
-        btn.className = 'reference-preset';
-        btn.addEventListener('click', () => loadReferencePreset(preset.type));
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = 100;
-        canvas.height = 100;
-        const ctx = canvas.getContext('2d');
-        
-        ctx.strokeStyle = '#00d4ff';
-        ctx.lineWidth = 2;
-        
-        switch(preset.type) {
-            case 'circle':
-                ctx.beginPath();
-                ctx.arc(50, 50, 40, 0, Math.PI * 2);
-                ctx.stroke();
-                break;
-            case 'grid':
-                for(let i = 0; i <= 100; i += 20) {
-                    ctx.beginPath();
-                    ctx.moveTo(i, 0);
-                    ctx.lineTo(i, 100);
-                    ctx.moveTo(0, i);
-                    ctx.lineTo(100, i);
-                    ctx.stroke();
-                }
-                break;
-            case 'guides':
-                ctx.beginPath();
-                ctx.moveTo(50, 0);
-                ctx.lineTo(50, 100);
-                ctx.moveTo(0, 50);
-                ctx.lineTo(100, 50);
-                ctx.stroke();
-                break;
-            case 'perspective':
-                ctx.beginPath();
-                ctx.moveTo(10, 10);
-                ctx.lineTo(50, 50);
-                ctx.lineTo(10, 90);
-                ctx.moveTo(90, 10);
-                ctx.lineTo(50, 50);
-                ctx.lineTo(90, 90);
-                ctx.stroke();
-                break;
-        }
-        
-        btn.appendChild(canvas);
-        
-        const name = document.createElement('div');
-        name.className = 'reference-preset-name';
-        name.textContent = preset.name;
-        btn.appendChild(name);
-        
-        elements.referencePresets.appendChild(btn);
-    });
-}
-
-function loadReferencePreset(type) {
-    const width = app.canvasSize;
-    const height = app.canvasSize;
-    
-    app.referenceCtx.clearRect(0, 0, width, height);
-    app.referenceCtx.save();
-    app.referenceCtx.strokeStyle = '#00d4ff';
-    app.referenceCtx.lineWidth = 3;
-    app.referenceCtx.globalAlpha = app.referenceOpacity;
-    
-    switch(type) {
-        case 'circle':
-            const radius = width * 0.4;
-            app.referenceCtx.beginPath();
-            app.referenceCtx.arc(width/2, height/2, radius, 0, Math.PI * 2);
-            app.referenceCtx.stroke();
-            break;
-        case 'grid':
-            const gridSize = 100;
-            for(let x = 0; x <= width; x += gridSize) {
-                app.referenceCtx.beginPath();
-                app.referenceCtx.moveTo(x, 0);
-                app.referenceCtx.lineTo(x, height);
-                app.referenceCtx.stroke();
-            }
-            for(let y = 0; y <= height; y += gridSize) {
-                app.referenceCtx.beginPath();
-                app.referenceCtx.moveTo(0, y);
-                app.referenceCtx.lineTo(width, y);
-                app.referenceCtx.stroke();
-            }
-            break;
-        case 'guides':
-            app.referenceCtx.beginPath();
-            app.referenceCtx.moveTo(width/2, 0);
-            app.referenceCtx.lineTo(width/2, height);
-            app.referenceCtx.moveTo(0, height/2);
-            app.referenceCtx.lineTo(width, height/2);
-            app.referenceCtx.stroke();
-            break;
-        case 'perspective':
-            app.referenceCtx.beginPath();
-            app.referenceCtx.moveTo(width * 0.2, height * 0.2);
-            app.referenceCtx.lineTo(width * 0.5, height * 0.5);
-            app.referenceCtx.lineTo(width * 0.2, height * 0.8);
-            app.referenceCtx.moveTo(width * 0.8, height * 0.2);
-            app.referenceCtx.lineTo(width * 0.5, height * 0.5);
-            app.referenceCtx.lineTo(width * 0.8, height * 0.8);
-            app.referenceCtx.stroke();
-            break;
-    }
-    
-    app.referenceCtx.restore();
-    app.referenceImage = type;
-    elements.clearReferenceBtn.disabled = false;
-    
-    showToast('Referencia cargada', 'success');
-}
-
-
-// =====================================================
-// EVENT LISTENERS
-// =====================================================
-function setupEventListeners() {
-    elements.createRoomBtn.addEventListener('click', createRoom);
-    elements.joinRoomBtn.addEventListener('click', () => {
-        const roomId = elements.roomInput.value.trim();
-        if (!roomId) {
-            showToast('Ingresa un código de sala', 'error');
-            return;
-        }
-        if (roomId.length < 3) {
-            showToast('El código debe tener al menos 3 caracteres', 'error');
-            return;
-        }
-        joinRoom(roomId);
-    });
-    elements.leaveRoomBtn.addEventListener('click', () => {
-        if (confirm('¿Seguro que quieres salir de la sala?')) {
-            leaveRoom();
-            showToast('Has salido de la sala', 'success');
-        }
-    });
-    elements.roomInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') elements.joinRoomBtn.click();
-    });
-
-    elements.colorPicker.addEventListener('input', (e) => updateColor(e.target.value));
-    elements.brushSize.addEventListener('input', (e) => updateBrushSize(parseInt(e.target.value)));
-    elements.drawModeBtn.addEventListener('click', () => setMode('draw'));
-    elements.eraserModeBtn.addEventListener('click', () => setMode('eraser'));
-
-    elements.undoBtn.addEventListener('click', () => syncUndo());
-    elements.redoBtn.addEventListener('click', () => syncRedo());
-
-    elements.uploadReferenceBtn.addEventListener('click', () => elements.referenceUpload.click());
-    elements.referenceUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                showToast('Selecciona una imagen válida', 'error');
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('La imagen es muy grande (máx 5MB)', 'error');
-                return;
-            }
-            loadReferenceImage(file);
-        }
-    });
-    
-    elements.loadUrlReferenceBtn.addEventListener('click', openUrlModal);
-    elements.galleryReferenceBtn.addEventListener('click', openGalleryModal);
-    elements.clearReferenceBtn.addEventListener('click', clearReference);
-    elements.referenceOpacity.addEventListener('input', (e) => {
-        app.referenceOpacity = parseInt(e.target.value) / 100;
-        elements.referenceOpacityValue.textContent = e.target.value + '%';
-        if (app.referenceImage) drawReferenceImage();
-    });
-
-    elements.closeUrlModal.addEventListener('click', closeUrlModal);
-    elements.cancelUrlBtn.addEventListener('click', closeUrlModal);
-    elements.loadUrlBtn.addEventListener('click', loadImageFromUrl);
-    elements.closeGalleryModal.addEventListener('click', closeGalleryModal);
-    elements.urlModal.addEventListener('click', (e) => {
-        if (e.target === elements.urlModal) closeUrlModal();
-    });
-    elements.galleryModal.addEventListener('click', (e) => {
-        if (e.target === elements.galleryModal) closeGalleryModal();
-    });
-
-    elements.clearCanvasBtn.addEventListener('click', clearCanvas);
-    elements.downloadBtn.addEventListener('click', downloadCanvas);
-
-    app.canvas.addEventListener('mousedown', startDrawing);
-    app.canvas.addEventListener('mousemove', draw);
-    app.canvas.addEventListener('mouseup', stopDrawing);
-    app.canvas.addEventListener('mouseout', stopDrawing);
-    app.canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    app.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    app.canvas.addEventListener('touchend', stopDrawing);
-    
-    elements.mobileMenuBtn.addEventListener('click', toggleMobileMenu);
-    elements.toolbarOverlay.addEventListener('click', toggleMobileMenu);
-}
-
-function debounce(func, wait) {
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(app.debounceTimers[func.name]);
-            func(...args);
-        };
-        clearTimeout(app.debounceTimers[func.name]);
-        app.debounceTimers[func.name] = setTimeout(later, wait);
+    return {
+        x: Math.round((clientX - rect.left) * scaleX),
+        y: Math.round((clientY - rect.top)  * scaleY)
     };
 }
 
-function toggleMobileMenu() {
-    elements.toolbar.classList.toggle('open');
-    elements.toolbarOverlay.classList.toggle('show');
+
+// =====================================================
+// DIBUJO — BORRADOR SIN FONDO BLANCO (destination-out)
+// =====================================================
+function startDrawing(e) {
+    if (!app.currentRoom) { showToast('Únete a una sala primero', 'warning'); return; }
+    app.isDrawing = true;
+    const pos = getMousePos(e);
+    app.lastX = pos.x;  app.lastY = pos.y;
+    app.currentStroke = [];
+}
+
+function draw(e) {
+    if (!app.isDrawing || !app.currentRoom) return;
+    const pos = getMousePos(e);
+    const x = pos.x, y = pos.y;
+
+    drawLine(app.lastX, app.lastY, x, y, app.currentColor, app.brushSize, app.isEraser);
+    app.currentStroke.push({ x1: app.lastX, y1: app.lastY, x2: x, y2: y });
+
+    const now = Date.now();
+    if (now - app.lastEmitTime > app.emitThrottle) {
+        sendStrokeBatch();
+        app.lastEmitTime = now;
+    }
+    app.lastX = x;  app.lastY = y;
+}
+
+function stopDrawing() {
+    if (!app.isDrawing) return;
+    app.isDrawing = false;
+    if (app.currentStroke.length) sendStrokeBatch();
+}
+
+function drawLine(x1, y1, x2, y2, color, size, isEraser) {
+    app.ctx.save();
+    app.ctx.beginPath();
+    app.ctx.moveTo(x1, y1);
+    app.ctx.lineTo(x2, y2);
+    app.ctx.lineWidth = size;
+    app.ctx.lineCap  = 'round';
+    app.ctx.lineJoin = 'round';
+
+    if (isEraser) {
+        // destination-out borra píxeles reales → fondo y referencia quedan intactos
+        app.ctx.globalCompositeOperation = 'destination-out';
+        app.ctx.strokeStyle = 'rgba(0,0,0,1)';
+    } else {
+        app.ctx.globalCompositeOperation = 'source-over';
+        app.ctx.strokeStyle = color;
+    }
+
+    app.ctx.stroke();
+    app.ctx.restore();
+}
+
+// Touch: 1 dedo → dibujar (no hay pan touch; el zoom es solo rueda)
+// Touch manejado completamente en setupZoom
+
+// =====================================================
+// FIREBASE — TRAZOS
+// =====================================================
+function sendStrokeBatch() {
+    if (!app.currentStroke.length || !app.currentRoom || !database) return;
+    database.ref(`rooms/${app.currentRoom}/strokes`).push({
+        p: app.currentStroke,
+        c: app.currentColor,
+        s: app.brushSize,
+        e: app.isEraser,
+        u: app.userId,
+        t: firebase.database.ServerValue.TIMESTAMP
+    }).catch(console.error);
+    app.currentStroke = [];
+}
+
+function listenToStrokes() {
+    if (!database || !app.currentRoom) return;
+    app.drawingListener = database.ref(`rooms/${app.currentRoom}/strokes`)
+        .on('child_added', snap => {
+            const stroke = snap.val();
+            if (stroke.u !== app.userId && Array.isArray(stroke.p)) {
+                stroke.p.forEach(pt =>
+                    drawLine(pt.x1, pt.y1, pt.x2, pt.y2, stroke.c, stroke.s, stroke.e));
+            }
+        });
+}
+
+function loadAllStrokes() {
+    if (!database || !app.currentRoom) return;
+    database.ref(`rooms/${app.currentRoom}/strokes`).once('value', snap => {
+        app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
+        snap.forEach(child => {
+            const stroke = child.val();
+            if (Array.isArray(stroke.p)) {
+                stroke.p.forEach(pt =>
+                    drawLine(pt.x1, pt.y1, pt.x2, pt.y2, stroke.c, stroke.s, stroke.e));
+            }
+        });
+    }).catch(console.error);
 }
 
 // =====================================================
-// GESTIÓN DE SALAS CON FECHA DE CREACIÓN
+// DESCARGA — COMPONER LOS TRES CANVAS EN UNO
+// =====================================================
+function downloadCanvas() {
+    try {
+        // Crear canvas temporal con los tres fusionados
+        const merged = document.createElement('canvas');
+        merged.width  = app.canvasSize;
+        merged.height = app.canvasSize;
+        const mCtx = merged.getContext('2d');
+
+        // 1. Fondo blanco
+        mCtx.drawImage(app.bgCanvas, 0, 0);
+        // 2. Referencia (semitransparente)
+        mCtx.drawImage(app.referenceCanvas, 0, 0);
+        // 3. Dibujo
+        mCtx.drawImage(app.canvas, 0, 0);
+
+        const link = document.createElement('a');
+        link.download = `neondraw-${Date.now()}.png`;
+        link.href = merged.toDataURL('image/png');
+        link.click();
+        showToast('Imagen descargada', 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('Error al descargar la imagen', 'error');
+    }
+}
+
+
+// =====================================================
+// SALAS
 // =====================================================
 function createRoom() {
-    if (!database) {
-        showToast('Error: Firebase no está conectado', 'error');
-        return;
-    }
-    
+    if (!database) { showToast('Firebase no conectado', 'error'); return; }
     const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
     elements.roomInput.value = '';
-    joinRoom(roomId, true); // true = crear nueva sala
+    joinRoom(roomId, true);
 }
 
 function joinRoom(roomId, isNew = false) {
-    if (!database) {
-        showToast('Error: Firebase no está conectado', 'error');
-        return;
-    }
-    
-    if (app.currentRoom) {
-        leaveRoom();
-    }
+    if (!database) { showToast('Firebase no conectado', 'error'); return; }
+    if (app.currentRoom) leaveRoom();
 
     app.currentRoom = roomId;
-    elements.roomInput.value = roomId;
+    elements.roomInput.value    = roomId;
     elements.roomInput.disabled = true;
     elements.canvasOverlay.classList.add('hidden');
-
-    elements.joinRoomBtn.style.display = 'none';
+    elements.joinRoomBtn.style.display   = 'none';
     elements.createRoomBtn.style.display = 'none';
-    elements.leaveRoomBtn.style.display = 'flex';
+    elements.leaveRoomBtn.style.display  = 'flex';
 
     const url = new URL(window.location);
     url.searchParams.set('room', roomId);
     window.history.pushState({}, '', url);
 
-    // Si es sala nueva, guardar metadata
     if (isNew) {
         database.ref(`rooms/${roomId}/metadata`).set({
-            created: firebase.database.ServerValue.TIMESTAMP,
+            created:   firebase.database.ServerValue.TIMESTAMP,
             createdBy: app.userId
         });
     }
 
     app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
-
     setupPresence();
     listenToStrokes();
-    listenToHistory(); // Escuchar historial sincronizado
     loadAllStrokes();
-
     showToast(`Conectado a sala: ${roomId}`, 'success');
 }
 
 function setupPresence() {
     if (!database || !app.currentRoom) return;
-    
-    const userRef = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
+    const userRef  = database.ref(`rooms/${app.currentRoom}/users/${app.userId}`);
     const usersRef = database.ref(`rooms/${app.currentRoom}/users`);
-    
     app.presenceRef = userRef;
-    userRef.set({
-        t: firebase.database.ServerValue.TIMESTAMP,
-        heartbeat: firebase.database.ServerValue.TIMESTAMP
-    }).catch(err => console.error('Error en presencia:', err));
 
+    userRef.set({ t: firebase.database.ServerValue.TIMESTAMP, heartbeat: firebase.database.ServerValue.TIMESTAMP });
     userRef.onDisconnect().remove();
 
-    if (app.heartbeatInterval) {
-        clearInterval(app.heartbeatInterval);
-    }
-    
+    if (app.heartbeatInterval) clearInterval(app.heartbeatInterval);
     app.heartbeatInterval = setInterval(() => {
-        if (app.currentRoom && app.isConnected) {
-            userRef.update({
-                heartbeat: firebase.database.ServerValue.TIMESTAMP
-            }).catch(err => {
-                if (app.isConnected) {
-                    userRef.set({
-                        t: firebase.database.ServerValue.TIMESTAMP,
-                        heartbeat: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-        }
+        if (app.currentRoom && app.isConnected)
+            userRef.update({ heartbeat: firebase.database.ServerValue.TIMESTAMP }).catch(() =>
+                userRef.set({ t: firebase.database.ServerValue.TIMESTAMP, heartbeat: firebase.database.ServerValue.TIMESTAMP }));
     }, 5000);
 
-    usersRef.on('value', (snapshot) => {
-        const users = snapshot.val();
-        if (!users) {
-            elements.userCount.textContent = '0';
-            return;
-        }
-        
-        const now = Date.now();
-        const activeUsers = Object.entries(users).filter(([id, data]) => {
-            return data.heartbeat && (now - data.heartbeat < 15000);
-        });
-        
-        elements.userCount.textContent = activeUsers.length;
+    usersRef.on('value', snap => {
+        const users = snap.val() || {};
+        const now   = Date.now();
+        const active = Object.values(users).filter(u => u.heartbeat && now - u.heartbeat < 15000);
+        elements.userCount.textContent = active.length;
     });
 }
 
 function leaveRoom() {
-    if (app.heartbeatInterval) {
-        clearInterval(app.heartbeatInterval);
-        app.heartbeatInterval = null;
-    }
-    
-    if (app.drawingListener && app.currentRoom) {
+    if (app.heartbeatInterval) { clearInterval(app.heartbeatInterval); app.heartbeatInterval = null; }
+    if (app.drawingListener && app.currentRoom)
         database.ref(`rooms/${app.currentRoom}/strokes`).off('child_added', app.drawingListener);
-    }
-    
-    if (app.historyListener && app.currentRoom) {
-        database.ref(`rooms/${app.currentRoom}/history`).off();
-    }
-    
-    if (app.presenceRef) {
-        app.presenceRef.remove();
-    }
+    if (app.presenceRef) app.presenceRef.remove();
 
-    app.currentRoom = null;
-    app.presenceRef = null;
-    
-    elements.roomInput.value = '';
+    app.currentRoom = null; app.presenceRef = null;
+    elements.roomInput.value    = '';
     elements.roomInput.disabled = false;
     elements.canvasOverlay.classList.remove('hidden');
-    elements.joinRoomBtn.style.display = 'inline-block';
+    elements.joinRoomBtn.style.display   = 'inline-block';
     elements.createRoomBtn.style.display = 'inline-block';
-    elements.leaveRoomBtn.style.display = 'none';
+    elements.leaveRoomBtn.style.display  = 'none';
     elements.userCount.textContent = '0';
-    
     const url = new URL(window.location);
     url.searchParams.delete('room');
     window.history.pushState({}, '', url);
@@ -664,459 +578,165 @@ function leaveRoom() {
 
 function updateConnectionStatus(connected) {
     app.isConnected = connected;
-    
-    if (connected) {
-        elements.statusDot.classList.remove('disconnected');
-        elements.statusText.textContent = 'Conectado';
-        
-        if (app.currentRoom && app.presenceRef) {
-            app.presenceRef.set({
-                t: firebase.database.ServerValue.TIMESTAMP,
-                heartbeat: firebase.database.ServerValue.TIMESTAMP
-            });
-        }
-    } else {
-        elements.statusDot.classList.add('disconnected');
-        elements.statusText.textContent = 'Desconectado';
+    elements.statusDot.classList.toggle('disconnected', !connected);
+    elements.statusText.textContent = connected ? 'Conectado' : 'Desconectado';
+    if (connected && app.currentRoom && app.presenceRef)
+        app.presenceRef.set({ t: firebase.database.ServerValue.TIMESTAMP, heartbeat: firebase.database.ServerValue.TIMESTAMP });
+}
+
+// =====================================================
+// REFERENCIAS — MISMA LÓGICA, CANVAS CORRECTO
+// =====================================================
+function loadReferencePreset(type) {
+    const W = app.canvasSize, H = app.canvasSize;
+    const rCtx = app.referenceCtx;
+
+    rCtx.clearRect(0, 0, W, H);
+    rCtx.save();
+    rCtx.strokeStyle  = '#0088ff';
+    rCtx.lineWidth    = 4;
+    rCtx.globalAlpha  = app.referenceOpacity;
+
+    switch (type) {
+        case 'circle':
+            rCtx.beginPath();
+            rCtx.arc(W/2, H/2, W * 0.4, 0, Math.PI * 2);
+            rCtx.stroke();
+            break;
+        case 'grid':
+            for (let x = 0; x <= W; x += 100) { rCtx.beginPath(); rCtx.moveTo(x,0); rCtx.lineTo(x,H); rCtx.stroke(); }
+            for (let y = 0; y <= H; y += 100) { rCtx.beginPath(); rCtx.moveTo(0,y); rCtx.lineTo(W,y); rCtx.stroke(); }
+            break;
+        case 'guides':
+            rCtx.beginPath(); rCtx.moveTo(W/2,0); rCtx.lineTo(W/2,H);
+            rCtx.moveTo(0,H/2); rCtx.lineTo(W,H/2); rCtx.stroke();
+            break;
+        case 'perspective':
+            rCtx.beginPath();
+            rCtx.moveTo(W*.2,H*.2); rCtx.lineTo(W*.5,H*.5); rCtx.lineTo(W*.2,H*.8);
+            rCtx.moveTo(W*.8,H*.2); rCtx.lineTo(W*.5,H*.5); rCtx.lineTo(W*.8,H*.8);
+            rCtx.stroke();
+            break;
     }
-}
 
-
-// =====================================================
-// DIBUJO EN CANVAS
-// =====================================================
-function startDrawing(e) {
-    if (!app.currentRoom) {
-        showToast('Únete a una sala primero', 'warning');
-        return;
-    }
-    
-    if (app.isPinching) return;
-    
-    app.isDrawing = true;
-    const pos = getMousePos(e);
-    app.lastX = Math.round(pos.x);
-    app.lastY = Math.round(pos.y);
-    app.currentStroke = [];
-}
-
-function draw(e) {
-    if (!app.isDrawing || !app.currentRoom || app.isPinching) return;
-    
-    const pos = getMousePos(e);
-    const x = Math.round(pos.x);
-    const y = Math.round(pos.y);
-    
-    drawLine(app.lastX, app.lastY, x, y, app.currentColor, app.brushSize, app.isEraser);
-    app.currentStroke.push({ x1: app.lastX, y1: app.lastY, x2: x, y2: y });
-    
-    const now = Date.now();
-    if (now - app.lastEmitTime > app.emitThrottle) {
-        sendStrokeBatch();
-        app.lastEmitTime = now;
-    }
-    
-    app.lastX = x;
-    app.lastY = y;
-}
-
-function stopDrawing() {
-    if (!app.isDrawing) return;
-    app.isDrawing = false;
-    
-    if (app.currentStroke.length > 0) {
-        sendStrokeBatch();
-    }
-    
-    // Guardar historial sincronizado
-    saveToSyncHistory();
-}
-
-function drawLine(x1, y1, x2, y2, color, size, isEraser = false) {
-    app.ctx.beginPath();
-    app.ctx.moveTo(x1, y1);
-    app.ctx.lineTo(x2, y2);
-    app.ctx.strokeStyle = isEraser ? '#ffffff' : color;
-    app.ctx.lineWidth = size;
-    app.ctx.stroke();
-}
-
-function getMousePos(e) {
-    const rect = app.canvas.getBoundingClientRect();
-    const scaleX = app.canvasSize / rect.width;
-    const scaleY = app.canvasSize / rect.height;
-    
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-    
-    return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-    };
-}
-
-function handleTouchStart(e) {
-    if (e.touches.length === 2) return; // Zoom
-    e.preventDefault();
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousedown', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
-    });
-    app.canvas.dispatchEvent(mouseEvent);
-}
-
-function handleTouchMove(e) {
-    if (e.touches.length === 2) return; // Zoom
-    e.preventDefault();
-    const touch = e.touches[0];
-    const mouseEvent = new MouseEvent('mousemove', {
-        clientX: touch.clientX,
-        clientY: touch.clientY
-    });
-    app.canvas.dispatchEvent(mouseEvent);
-}
-
-// =====================================================
-// FIREBASE - TRAZOS
-// =====================================================
-function sendStrokeBatch() {
-    if (!app.currentStroke.length || !app.currentRoom || !database) return;
-    
-    const strokeRef = database.ref(`rooms/${app.currentRoom}/strokes`).push();
-    strokeRef.set({
-        p: app.currentStroke,
-        c: app.currentColor,
-        s: app.brushSize,
-        e: app.isEraser,
-        u: app.userId,
-        t: firebase.database.ServerValue.TIMESTAMP
-    }).catch(err => console.error('Error al enviar trazo:', err));
-    
-    app.currentStroke = [];
-}
-
-function listenToStrokes() {
-    if (!database || !app.currentRoom) return;
-    
-    const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
-    
-    app.drawingListener = strokesRef.on('child_added', (snapshot) => {
-        const stroke = snapshot.val();
-        
-        if (stroke.u !== app.userId && stroke.p && Array.isArray(stroke.p)) {
-            stroke.p.forEach(point => {
-                drawLine(point.x1, point.y1, point.x2, point.y2, stroke.c, stroke.s, stroke.e);
-            });
-        }
-    });
-}
-
-function loadAllStrokes() {
-    if (!database || !app.currentRoom) return;
-    
-    const strokesRef = database.ref(`rooms/${app.currentRoom}/strokes`);
-    
-    strokesRef.once('value', (snapshot) => {
-        app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
-        
-        snapshot.forEach((childSnapshot) => {
-            const stroke = childSnapshot.val();
-            if (stroke.p && Array.isArray(stroke.p)) {
-                stroke.p.forEach(point => {
-                    drawLine(point.x1, point.y1, point.x2, point.y2, stroke.c, stroke.s, stroke.e);
-                });
-            }
-        });
-    }).catch(err => {
-        console.error('Error al cargar trazos:', err);
-        showToast('Error al cargar dibujos', 'error');
-    });
-}
-
-// =====================================================
-// HISTORIAL SINCRONIZADO (20 PASOS)
-// =====================================================
-function saveToSyncHistory() {
-    if (!app.currentRoom || !database) return;
-    
-    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
-    const imageData = app.canvas.toDataURL('image/png', 0.8);
-    
-    // Obtener historial actual
-    historyRef.once('value', (snapshot) => {
-        let history = snapshot.val() || { states: [], step: -1 };
-        
-        // Si estamos en medio del historial, eliminar estados futuros
-        if (history.step < history.states.length - 1) {
-            history.states = history.states.slice(0, history.step + 1);
-        }
-        
-        // Agregar nuevo estado
-        history.states.push(imageData);
-        history.step++;
-        
-        // Limitar a 20 estados
-        if (history.states.length > 20) {
-            history.states.shift();
-            history.step--;
-        }
-        
-        historyRef.set(history);
-        updateHistoryButtons();
-    });
-}
-
-function listenToHistory() {
-    if (!database || !app.currentRoom) return;
-    
-    const historyRef = database.ref(`rooms/${app.currentRoom}/history/step`);
-    
-    app.historyListener = historyRef.on('value', (snapshot) => {
-        updateHistoryButtons();
-    });
-}
-
-function syncUndo() {
-    if (!app.currentRoom || !database) return;
-    
-    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
-    
-    historyRef.once('value', (snapshot) => {
-        const history = snapshot.val();
-        if (!history || history.step <= 0) return;
-        
-        history.step--;
-        historyRef.set(history).then(() => {
-            restoreFromSyncHistory(history.step);
-        });
-    });
-}
-
-function syncRedo() {
-    if (!app.currentRoom || !database) return;
-    
-    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
-    
-    historyRef.once('value', (snapshot) => {
-        const history = snapshot.val();
-        if (!history || history.step >= history.states.length - 1) return;
-        
-        history.step++;
-        historyRef.set(history).then(() => {
-            restoreFromSyncHistory(history.step);
-        });
-    });
-}
-
-function restoreFromSyncHistory(step) {
-    const historyRef = database.ref(`rooms/${app.currentRoom}/history/states/${step}`);
-    
-    historyRef.once('value', (snapshot) => {
-        const imageData = snapshot.val();
-        if (imageData) {
-            const img = new Image();
-            img.onload = () => {
-                app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
-                app.ctx.drawImage(img, 0, 0);
-            };
-            img.src = imageData;
-        }
-    });
-}
-
-function updateHistoryButtons() {
-    if (!app.currentRoom || !database) {
-        elements.undoBtn.disabled = true;
-        elements.redoBtn.disabled = true;
-        return;
-    }
-    
-    const historyRef = database.ref(`rooms/${app.currentRoom}/history`);
-    
-    historyRef.once('value', (snapshot) => {
-        const history = snapshot.val();
-        if (!history) {
-            elements.undoBtn.disabled = true;
-            elements.redoBtn.disabled = true;
-            return;
-        }
-        
-        elements.undoBtn.disabled = history.step <= 0;
-        elements.redoBtn.disabled = history.step >= history.states.length - 1;
-    });
-}
-
-
-// =====================================================
-// MODALES Y REFERENCIAS
-// =====================================================
-function openUrlModal() {
-    elements.urlModal.classList.add('show');
-    elements.imageUrlInput.value = '';
-    elements.imageUrlInput.focus();
-}
-
-function closeUrlModal() {
-    elements.urlModal.classList.remove('show');
-}
-
-function loadImageFromUrl() {
-    const url = elements.imageUrlInput.value.trim();
-    
-    if (!url) {
-        showToast('Ingresa una URL válida', 'error');
-        return;
-    }
-    
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
-    img.onload = () => {
-        app.referenceImage = img;
-        drawReferenceImage();
-        elements.clearReferenceBtn.disabled = false;
-        closeUrlModal();
-        showToast('Imagen cargada correctamente', 'success');
-    };
-    
-    img.onerror = () => {
-        showToast('Error al cargar la imagen. Verifica la URL o permisos CORS', 'error');
-    };
-    
-    img.src = url;
-}
-
-function openGalleryModal() {
-    elements.galleryModal.classList.add('show');
-    loadGallery();
-}
-
-function closeGalleryModal() {
-    elements.galleryModal.classList.remove('show');
-}
-
-function loadGallery() {
-    elements.galleryGrid.innerHTML = '<div class="gallery-item-loading">Cargando galería...</div>';
-    
-    setTimeout(() => {
-        elements.galleryGrid.innerHTML = '';
-        
-        IMAGE_GALLERY.forEach((item) => {
-            const div = document.createElement('div');
-            div.className = 'gallery-item';
-            
-            const img = document.createElement('img');
-            img.src = item.url;
-            img.alt = item.name;
-            img.loading = 'lazy';
-            
-            img.onerror = () => {
-                div.innerHTML = '<div class="gallery-item-loading">Error al cargar</div>';
-            };
-            
-            div.appendChild(img);
-            div.addEventListener('click', () => loadGalleryImage(item.url));
-            
-            elements.galleryGrid.appendChild(div);
-        });
-    }, 300);
-}
-
-function loadGalleryImage(url) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
-    img.onload = () => {
-        app.referenceImage = img;
-        drawReferenceImage();
-        elements.clearReferenceBtn.disabled = false;
-        closeGalleryModal();
-        showToast('Imagen de referencia cargada', 'success');
-    };
-    
-    img.onerror = () => {
-        showToast('Error al cargar la imagen', 'error');
-    };
-    
-    img.src = url;
-}
-
-function loadReferenceImage(file) {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-            app.referenceImage = img;
-            drawReferenceImage();
-            elements.clearReferenceBtn.disabled = false;
-            showToast('Imagen de referencia cargada', 'success');
-        };
-        img.onerror = () => {
-            showToast('Error al cargar la imagen', 'error');
-        };
-        img.src = e.target.result;
-    };
-    
-    reader.onerror = () => {
-        showToast('Error al leer el archivo', 'error');
-    };
-    
-    reader.readAsDataURL(file);
+    rCtx.restore();
+    app.referenceImage = type;
+    elements.clearReferenceBtn.disabled = false;
+    showToast('Referencia cargada', 'success');
 }
 
 function drawReferenceImage() {
-    if (!app.referenceImage) return;
-    
-    const width = app.canvasSize;
-    const height = app.canvasSize;
-    
-    app.referenceCtx.clearRect(0, 0, width, height);
+    if (!(app.referenceImage instanceof HTMLImageElement)) return;
+    const W = app.canvasSize, H = app.canvasSize;
+    const img = app.referenceImage;
+    const ratio = img.width / img.height;
+
+    let dw, dh, dx, dy;
+    if (ratio >= 1) { dw = W; dh = W / ratio; dx = 0; dy = (H - dh) / 2; }
+    else            { dh = H; dw = H * ratio; dy = 0; dx = (W - dw) / 2; }
+
+    app.referenceCtx.clearRect(0, 0, W, H);
     app.referenceCtx.save();
     app.referenceCtx.globalAlpha = app.referenceOpacity;
-    
-    if (app.referenceImage instanceof HTMLImageElement) {
-        const imgRatio = app.referenceImage.width / app.referenceImage.height;
-        
-        let drawWidth, drawHeight, offsetX, offsetY;
-        
-        if (imgRatio > 1) {
-            drawWidth = width;
-            drawHeight = width / imgRatio;
-            offsetX = 0;
-            offsetY = (height - drawHeight) / 2;
-        } else {
-            drawHeight = height;
-            drawWidth = height * imgRatio;
-            offsetX = (width - drawWidth) / 2;
-            offsetY = 0;
-        }
-        
-        app.referenceCtx.drawImage(app.referenceImage, offsetX, offsetY, drawWidth, drawHeight);
-    } else if (typeof app.referenceImage === 'string') {
-        // Es una referencia predeterminada, ya está dibujada
-    }
-    
+    app.referenceCtx.drawImage(img, dx, dy, dw, dh);
     app.referenceCtx.restore();
+
+    elements.clearReferenceBtn.disabled = false;
 }
 
 function clearReference() {
-    if (!app.referenceImage) {
-        showToast('No hay referencia para eliminar', 'warning');
-        return;
-    }
-    
+    if (!app.referenceImage) { showToast('No hay referencia', 'warning'); return; }
     app.referenceImage = null;
     app.referenceCtx.clearRect(0, 0, app.canvasSize, app.canvasSize);
     elements.referenceUpload.value = '';
     elements.clearReferenceBtn.disabled = true;
-    
-    document.querySelectorAll('.reference-preset').forEach(el => {
-        el.classList.remove('active');
-    });
-    
+    document.querySelectorAll('.reference-preset').forEach(el => el.classList.remove('active'));
     showToast('Referencia eliminada', 'success');
+}
+
+
+// =====================================================
+// PALETAS Y PRESETS DE REFERENCIA
+// =====================================================
+function initPalettes() {
+    PALETTES.forEach((palette, index) => {
+        const el = document.createElement('div');
+        el.className = 'palette-item' + (index === 0 ? ' active' : '');
+        
+        const colorsDiv = document.createElement('div');
+        colorsDiv.className = 'palette-colors';
+        palette.colors.forEach(c => {
+            const dot = document.createElement('div');
+            dot.className = 'palette-color-dot';
+            dot.style.background = c;
+            colorsDiv.appendChild(dot);
+        });
+
+        const name = document.createElement('span');
+        name.className = 'palette-name';
+        name.textContent = palette.name;
+
+        el.appendChild(colorsDiv); el.appendChild(name);
+        el.addEventListener('click', () => selectPalette(index));
+        elements.palettesList.appendChild(el);
+    });
+    loadPaletteColors(0);
+}
+
+function selectPalette(index) {
+    app.currentPalette = index;
+    document.querySelectorAll('.palette-item').forEach((el, i) => el.classList.toggle('active', i === index));
+    loadPaletteColors(index);
+}
+
+function loadPaletteColors(index) {
+    elements.presetColors.innerHTML = '';
+    PALETTES[index].colors.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'color-preset';
+        btn.dataset.color = color;
+        btn.style.background = color;
+        btn.addEventListener('click', () => { updateColor(color); elements.colorPicker.value = color; });
+        elements.presetColors.appendChild(btn);
+    });
+}
+
+function initRefPresets() {
+    REFERENCE_PRESETS.forEach(preset => {
+        const btn = document.createElement('div');
+        btn.className = 'reference-preset';
+        btn.addEventListener('click', () => loadReferencePreset(preset.type));
+
+        const mini = document.createElement('canvas');
+        mini.width = mini.height = 100;
+        const mCtx = mini.getContext('2d');
+        mCtx.strokeStyle = '#0088ff'; mCtx.lineWidth = 2;
+
+        switch (preset.type) {
+            case 'circle':
+                mCtx.beginPath(); mCtx.arc(50,50,40,0,Math.PI*2); mCtx.stroke(); break;
+            case 'grid':
+                for(let i=0;i<=100;i+=20){
+                    mCtx.beginPath();mCtx.moveTo(i,0);mCtx.lineTo(i,100);
+                    mCtx.moveTo(0,i);mCtx.lineTo(100,i);mCtx.stroke();
+                } break;
+            case 'guides':
+                mCtx.beginPath();mCtx.moveTo(50,0);mCtx.lineTo(50,100);
+                mCtx.moveTo(0,50);mCtx.lineTo(100,50);mCtx.stroke(); break;
+            case 'perspective':
+                mCtx.beginPath();
+                mCtx.moveTo(10,10);mCtx.lineTo(50,50);mCtx.lineTo(10,90);
+                mCtx.moveTo(90,10);mCtx.lineTo(50,50);mCtx.lineTo(90,90);
+                mCtx.stroke(); break;
+        }
+
+        const label = document.createElement('div');
+        label.className = 'reference-preset-name';
+        label.textContent = preset.name;
+
+        btn.appendChild(mini); btn.appendChild(label);
+        elements.referencePresets.appendChild(btn);
+    });
 }
 
 // =====================================================
@@ -1126,88 +746,182 @@ function updateColor(color) {
     app.currentColor = color;
     elements.colorPreview.style.background = color;
     elements.brushIndicator.style.background = color;
-    
-    document.querySelectorAll('.color-preset').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.color === color);
-    });
+    document.querySelectorAll('.color-preset').forEach(b => b.classList.toggle('active', b.dataset.color === color));
 }
 
 function updateBrushSize(size) {
     app.brushSize = size;
     elements.brushSizeValue.textContent = size + 'px';
-    elements.brushIndicator.style.width = size + 'px';
+    elements.brushIndicator.style.width  = size + 'px';
     elements.brushIndicator.style.height = size + 'px';
 }
 
 function setMode(mode) {
-    if (mode === 'draw') {
-        app.isEraser = false;
-        elements.drawModeBtn.classList.add('active');
-        elements.eraserModeBtn.classList.remove('active');
-    } else {
-        app.isEraser = true;
-        elements.eraserModeBtn.classList.add('active');
-        elements.drawModeBtn.classList.remove('active');
-    }
+    app.isEraser = mode === 'eraser';
+    elements.drawModeBtn.classList.toggle('active', !app.isEraser);
+    elements.eraserModeBtn.classList.toggle('active', app.isEraser);
 }
 
 function clearCanvas() {
-    if (!app.currentRoom) {
-        showToast('Únete a una sala primero', 'warning');
-        return;
-    }
-    
-    if (confirm('¿Estás seguro de limpiar el lienzo? Esto afectará a todos los usuarios.')) {
-        database.ref(`rooms/${app.currentRoom}/strokes`).remove()
-            .then(() => {
-                database.ref(`rooms/${app.currentRoom}/history`).remove();
-                app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize);
-                showToast('Lienzo limpiado', 'success');
-            })
-            .catch(err => {
-                console.error('Error al limpiar:', err);
-                showToast('Error al limpiar el lienzo', 'error');
-            });
-    }
-}
-
-function downloadCanvas() {
-    try {
-        const link = document.createElement('a');
-        link.download = `neondraw-${Date.now()}.png`;
-        link.href = app.canvas.toDataURL('image/png');
-        link.click();
-        showToast('Imagen descargada', 'success');
-    } catch (err) {
-        console.error('Error al descargar:', err);
-        showToast('Error al descargar la imagen', 'error');
-    }
+    if (!app.currentRoom) { showToast('Únete a una sala primero', 'warning'); return; }
+    if (!confirm('¿Limpiar el lienzo para todos?')) return;
+    database.ref(`rooms/${app.currentRoom}/strokes`).remove()
+        .then(() => { app.ctx.clearRect(0, 0, app.canvasSize, app.canvasSize); showToast('Lienzo limpiado', 'success'); })
+        .catch(() => showToast('Error al limpiar', 'error'));
 }
 
 // =====================================================
-// NOTIFICACIONES
+// MODALES
 // =====================================================
-function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<div class="toast-message">${message}</div>`;
-    
-    elements.toastContainer.appendChild(toast);
-    
+function openUrlModal()    { elements.urlModal.classList.add('show');    elements.imageUrlInput.value = ''; elements.imageUrlInput.focus(); }
+function closeUrlModal()   { elements.urlModal.classList.remove('show'); }
+function openGalleryModal(){ elements.galleryModal.classList.add('show'); loadGallery(); }
+function closeGalleryModal(){ elements.galleryModal.classList.remove('show'); }
+
+function loadImageFromUrl() {
+    const url = elements.imageUrlInput.value.trim();
+    if (!url) { showToast('Ingresa una URL', 'error'); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { app.referenceImage = img; drawReferenceImage(); closeUrlModal(); showToast('Imagen cargada', 'success'); };
+    img.onerror = () => showToast('Error al cargar. Verifica la URL o CORS', 'error');
+    img.src = url;
+}
+
+function loadGallery() {
+    elements.galleryGrid.innerHTML = '<div class="gallery-item-loading">Cargando...</div>';
     setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+        elements.galleryGrid.innerHTML = '';
+        IMAGE_GALLERY.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            const img = document.createElement('img');
+            img.src = item.url; img.alt = item.name; img.loading = 'lazy';
+            img.onerror = () => { div.innerHTML = '<div class="gallery-item-loading">Sin CORS</div>'; };
+            div.appendChild(img);
+            div.addEventListener('click', () => loadGalleryImage(item.url));
+            elements.galleryGrid.appendChild(div);
+        });
+    }, 300);
+}
+
+function loadGalleryImage(url) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { app.referenceImage = img; drawReferenceImage(); closeGalleryModal(); showToast('Imagen cargada', 'success'); };
+    img.onerror = () => showToast('Error CORS — intenta con otra imagen o URL directa', 'error');
+    img.src = url;
+}
+
+function loadReferenceImage(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload  = () => { app.referenceImage = img; drawReferenceImage(); showToast('Imagen cargada', 'success'); };
+        img.onerror = () => showToast('Error al cargar imagen', 'error');
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 // =====================================================
-// CLEANUP
+// EVENT LISTENERS
 // =====================================================
-window.addEventListener('beforeunload', () => {
-    leaveRoom();
-});
+function setupEvents() {
+    // Sala
+    elements.createRoomBtn.addEventListener('click', createRoom);
+    elements.joinRoomBtn.addEventListener('click', () => {
+        const id = elements.roomInput.value.trim();
+        if (!id || id.length < 3) { showToast('Código de al menos 3 caracteres', 'error'); return; }
+        joinRoom(id);
+    });
+    elements.leaveRoomBtn.addEventListener('click', () => {
+        if (confirm('¿Salir de la sala?')) { leaveRoom(); showToast('Has salido', 'success'); }
+    });
+    elements.roomInput.addEventListener('keypress', e => { if (e.key === 'Enter') elements.joinRoomBtn.click(); });
 
-// Log de inicio
-console.log('%cNeonDraw v3.0 cargado ✅', 'color: #00ff88; font-size: 16px; font-weight: bold;');
-console.log('%c✨ Canvas cuadrado | Historial sincronizado | Zoom táctil', 'color: #00d4ff; font-size: 12px;');
+    // Herramientas
+    elements.colorPicker.addEventListener('input', e => updateColor(e.target.value));
+    elements.brushSize.addEventListener('input',   e => updateBrushSize(parseInt(e.target.value)));
+    elements.drawModeBtn.addEventListener('click',   () => setMode('draw'));
+    elements.eraserModeBtn.addEventListener('click', () => setMode('eraser'));
 
+    // Referencia
+    elements.uploadReferenceBtn.addEventListener('click',  () => elements.referenceUpload.click());
+    elements.referenceUpload.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { showToast('Selecciona una imagen', 'error'); return; }
+        if (file.size > 5*1024*1024) { showToast('Máximo 5MB', 'error'); return; }
+        loadReferenceImage(file);
+    });
+    elements.loadUrlReferenceBtn.addEventListener('click',  openUrlModal);
+    elements.galleryReferenceBtn.addEventListener('click',  openGalleryModal);
+    elements.clearReferenceBtn.addEventListener('click',    clearReference);
+    elements.referenceOpacity.addEventListener('input', e => {
+        app.referenceOpacity = parseInt(e.target.value) / 100;
+        elements.referenceOpacityValue.textContent = e.target.value + '%';
+        if (app.referenceImage instanceof HTMLImageElement) drawReferenceImage();
+        else if (typeof app.referenceImage === 'string')    loadReferencePreset(app.referenceImage);
+    });
+
+    // Modales
+    elements.closeUrlModal.addEventListener('click',     closeUrlModal);
+    elements.cancelUrlBtn.addEventListener('click',      closeUrlModal);
+    elements.loadUrlBtn.addEventListener('click',        loadImageFromUrl);
+    elements.closeGalleryModal.addEventListener('click', closeGalleryModal);
+    elements.urlModal.addEventListener('click',     e => { if (e.target === elements.urlModal)     closeUrlModal(); });
+    elements.galleryModal.addEventListener('click', e => { if (e.target === elements.galleryModal) closeGalleryModal(); });
+    elements.imageUrlInput.addEventListener('keypress', e => { if (e.key === 'Enter') loadImageFromUrl(); });
+
+    // Acciones
+    elements.clearCanvasBtn.addEventListener('click', clearCanvas);
+    elements.downloadBtn.addEventListener('click',    downloadCanvas);
+
+    // Dibujo — mouse
+    app.canvas.addEventListener('mousedown', startDrawing);
+    app.canvas.addEventListener('mousemove', draw);
+    app.canvas.addEventListener('mouseup',   stopDrawing);
+    app.canvas.addEventListener('mouseout',  stopDrawing);
+    // Touch — manejado completamente en setupZoom para evitar conflictos
+
+    // Botón reset zoom (fijo en pantalla)
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn-secondary';
+    resetBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:500;padding:8px 14px;font-size:0.85rem;';
+    resetBtn.innerHTML = '🔍 Reset Zoom';
+    resetBtn.addEventListener('click', resetZoom);
+    document.body.appendChild(resetBtn);
+
+    // Móvil
+    elements.mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    elements.toolbarOverlay.addEventListener('click', toggleMobileMenu);
+}
+
+function toggleMobileMenu() {
+    elements.toolbar.classList.toggle('open');
+    elements.toolbarOverlay.classList.toggle('show');
+}
+
+// =====================================================
+// UTILS
+// =====================================================
+function debounce(fn, ms) {
+    return function(...args) {
+        clearTimeout(app.debounceTimers[fn.name]);
+        app.debounceTimers[fn.name] = setTimeout(() => fn(...args), ms);
+    };
+}
+
+function showToast(message, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<div class="toast-message">${message}</div>`;
+    elements.toastContainer.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+window.addEventListener('beforeunload', leaveRoom);
+
+console.log('%cNeonDraw v3.2 ✅', 'color:#00ff88;font-size:16px;font-weight:bold;');
+console.log('%cTres capas | Borrador real | Zoom al cursor', 'color:#00d4ff;font-size:12px;');
