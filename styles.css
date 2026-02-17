@@ -827,26 +827,37 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Fondo oscuro — el blanco del lienzo viene del canvas #bg-canvas */
+    background: transparent;
 }
 
+/* Tres canvas apilados: fondo → referencia → dibujo */
+#bg-canvas,
 #reference-canvas,
 #drawing-canvas {
     position: absolute;
-    box-shadow: var(--shadow-lg);
     border-radius: 8px;
-    max-width: 98%;
-    max-height: 98%;
+    /* El tamaño visual se aplica por JS; aquí solo declaramos position */
+}
+
+#bg-canvas {
+    z-index: 0;
+    background: #ffffff; /* Fondo blanco visible del lienzo */
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
 }
 
 #reference-canvas {
     z-index: 1;
     pointer-events: none;
+    /* Sin fondo — solo los trazos de referencia */
 }
 
 #drawing-canvas {
-    background: #ffffff;
     z-index: 2;
+    background: transparent; /* Transparente → se ven referencia y fondo */
     cursor: crosshair;
+    box-shadow: var(--shadow-lg);
 }
 
 .canvas-overlay {
