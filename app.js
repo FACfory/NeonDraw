@@ -2,13 +2,14 @@
 // CONFIGURACIÓN DE FIREBASE
 // =====================================================
 const firebaseConfig = {
-    apiKey: "TU_API_KEY_AQUI",
-    authDomain: "tu-proyecto.firebaseapp.com",
-    databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
-    projectId: "tu-proyecto",
-    storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
+  apiKey: "AIzaSyAAuFtgwStXXvWhazGafirW1bABGsHDk_w",
+  authDomain: "neondraw-app-gem.firebaseapp.com",
+  databaseURL: "https://neondraw-app-gem-default-rtdb.firebaseio.com",
+  projectId: "neondraw-app-gem",
+  storageBucket: "neondraw-app-gem.firebasestorage.app",
+  messagingSenderId: "611346212206",
+  appId: "1:611346212206:web:d124d02ff3d55d25d44d7f",
+  measurementId: "G-E366ZD3J90"
 };
 
 let database = null;
