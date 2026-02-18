@@ -18,11 +18,11 @@ let database = null;
 // CONSTANTES
 // =====================================================
 const IMAGE_GALLERY = [
-    { name: 'Gato',    url: 'https://i.pinimg.com/736x/2f/01/09/2f010980a035d7562974e57a08b31a94.jpg' },
-    { name: 'Casa',    url: 'https://i.pinimg.com/736x/40/b2/5c/40b25c9f1fe9eb0716efde8eb71d953d.jpg' },
-    { name: 'Arbol',   url: 'https://i.pinimg.com/736x/41/91/8b/41918b5871d2f96753252ffcade9aa62.jpg' },
-    { name: 'Flor',    url: 'https://i.pinimg.com/736x/e4/ed/a3/e4eda33b2c9e9c6b26761ba92242cbb2.jpg' },
-    { name: 'Girasol', url: 'https://i.pinimg.com/564x/3d/c4/d0/3dc4d0650936aaf13cbc9f0e2dbd4e7c.jpg' },
+    { name: 'Gato',    url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771367907/2f010980a035d7562974e57a08b31a94_ekhybs.jpg' },
+    { name: 'Casa',    url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771367921/40b25c9f1fe9eb0716efde8eb71d953d_fuyfbn.jpg' },
+    { name: 'Arbol',   url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771367936/41918b5871d2f96753252ffcade9aa62_mvumvh.jpg' },
+    { name: 'Flor',    url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771367951/e4eda33b2c9e9c6b26761ba92242cbb2_b3mqfj.jpg' },
+    { name: 'Girasol', url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771367964/3dc4d0650936aaf13cbc9f0e2dbd4e7c_i4x0iz.jpg' },
     { name: 'Paisaje', url: 'https://res.cloudinary.com/dyui7yxsa/image/upload/v1771283666/10f1cade-2568-4e6a-945c-dd81a1179285.png' }
 ];
 
@@ -50,7 +50,7 @@ const app = {
     userId:       'user-' + Math.random().toString(36).substr(2, 9),
     isDrawing:    false,
     lastX: 0, lastY: 0,
-    currentColor: '#000000',
+    currentColor: '#00ff88',
     brushSize:    3,
     isEraser:     false,
 
@@ -154,6 +154,10 @@ window.addEventListener('load', () => {
         setupEvents();
         initPalettes();
         initRefPresets();
+        
+        // Inicializar color visual
+        updateColor(app.currentColor);
+        updateBrushSize(app.brushSize);
 
         const room = new URLSearchParams(window.location.search).get('room');
         if (room) { elements.roomInput.value = room; joinRoom(room); }
@@ -217,122 +221,102 @@ function resizeCanvas() {
 function setupZoom() {
     const container = app.canvas.parentElement;
 
-    // ── Rueda del ratón ──────────────────────────────
+    // Función auxiliar para calcular distancia entre dos puntos (dedos)
+    const getDistance = (t1, t2) => {
+        return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    };
+
+    // ── Rueda del ratón (PC) ──────────────────────────────
     container.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const factor   = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
         const newScale = Math.max(0.25, Math.min(8, app.scale * factor));
-        const rect     = app.canvas.getBoundingClientRect();
+        const rect = app.canvas.getBoundingClientRect();
         zoomAt(
             (e.clientX - rect.left) / rect.width,
-            (e.clientY - rect.top)  / rect.height,
+            (e.clientY - rect.top) / rect.height,
             newScale
         );
     }, { passive: false });
 
-    // ── Touch unificado ──────────────────────────────
-    // Estado del pinch
-    let pinchActive    = false;
+    // ── Touch (Móvil) ──────────────────────────────
+    let pinchStartDist = 0;
     let pinchStartScale = 1;
-    let pinchStartDist  = 1;
-    let pinchOriginX    = 0.5;
-    let pinchOriginY    = 0.5;
 
     container.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1) {
-            // ─ 1 dedo: iniciar dibujo
+        if (e.touches.length === 2) {
             e.preventDefault();
-            pinchActive = false;
-            startDrawing(e.touches[0]);
-        } else if (e.touches.length === 2) {
-            // ─ 2 dedos: iniciar pinch, cancelar dibujo
-            e.preventDefault();
-            pinchActive = true;
-            stopDrawing();                          // cancelar trazo en curso
-
+            app.isDrawing = false; // Detener dibujo si se usan 2 dedos
+            pinchStartDist = getDistance(e.touches[0], e.touches[1]);
             pinchStartScale = app.scale;
-            pinchStartDist  = getDistance(e.touches[0], e.touches[1]);
-
-            const rect   = app.canvas.getBoundingClientRect();
-            const midX   = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const midY   = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            pinchOriginX = (midX - rect.left) / rect.width;
-            pinchOriginY = (midY - rect.top)  / rect.height;
+        } else if (e.touches.length === 1) {
+            startDrawing(e.touches[0]);
         }
     }, { passive: false });
 
     container.addEventListener('touchmove', (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Evita scroll de la página
 
-        if (e.touches.length === 1 && !pinchActive) {
-            // ─ 1 dedo: dibujar
+        if (e.touches.length === 2) {
+            // Lógica de Zoom
+            const dist = getDistance(e.touches[0], e.touches[1]);
+            if (pinchStartDist === 0) return;
+
+            const factor = dist / pinchStartDist;
+            const newScale = Math.max(0.25, Math.min(8, pinchStartScale * factor));
+            
+            const rect = app.canvas.getBoundingClientRect();
+            const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+            zoomAt(
+                (midX - rect.left) / rect.width,
+                (midY - rect.top) / rect.height,
+                newScale
+            );
+        } else if (e.touches.length === 1 && app.isDrawing) {
             draw(e.touches[0]);
-        } else if (e.touches.length === 2) {
-            // ─ 2 dedos: zoom
-            pinchActive = true;
-            const dist     = getDistance(e.touches[0], e.touches[1]);
-            const newScale = Math.max(0.25, Math.min(8,
-                pinchStartScale * (dist / pinchStartDist)));
-
-            const rect   = app.canvas.getBoundingClientRect();
-            const midX   = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const midY   = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            pinchOriginX = (midX - rect.left) / rect.width;
-            pinchOriginY = (midY - rect.top)  / rect.height;
-
-            zoomAt(pinchOriginX, pinchOriginY, newScale);
         }
     }, { passive: false });
 
     container.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        if (e.touches.length === 0) {
-            pinchActive = false;
-            stopDrawing();
-        } else if (e.touches.length === 1 && pinchActive) {
-            // Quedó 1 dedo después del pinch → no dibujar todavía
-            pinchActive = false;
-        }
+        if (e.touches.length < 2) pinchStartDist = 0;
+        stopDrawing();
     }, { passive: false });
 }
 
 /**
- * Hace zoom a un punto específico del canvas.
- * ox, oy: fracción 0..1 relativa al canvas visible
- * newScale: escala deseada
+ * Zoom centrado en un punto (approach Photopea/Figma)
+ * La clave: calcular la posición del ratón ANTES y DESPUÉS del zoom,
+ * y ajustar el offset para compensar la diferencia.
  */
 function zoomAt(ox, oy, newScale) {
     const rect = app.canvas.getBoundingClientRect();
     
-    // Punto en coordenadas del viewport donde queremos mantener fijo el zoom
-    const fixedX = rect.left + (ox * rect.width);
-    const fixedY = rect.top  + (oy * rect.height);
+    // Posición del punto en coordenadas del canvas actual (antes del zoom)
+    const pointBeforeX = ox * rect.width;
+    const pointBeforeY = oy * rect.height;
     
-    // Centro del contenedor en coordenadas del viewport
-    const container = app.canvas.parentElement.getBoundingClientRect();
-    const centerX = container.left + (container.width  / 2);
-    const centerY = container.top  + (container.height / 2);
+    // Cambio de escala
+    const ratio = newScale / app.scale;
     
-    // Cuánto se mueve el punto fijo respecto al centro del contenedor
-    const beforeX = fixedX - centerX;
-    const beforeY = fixedY - centerY;
+    // Después de escalar, ese mismo punto estará en una nueva posición
+    const pointAfterX = pointBeforeX * ratio;
+    const pointAfterY = pointBeforeY * ratio;
     
-    // Después del zoom, ese mismo punto debe estar en el mismo lugar en pantalla
-    // Fórmula: newOffset = currentOffset + (point - center) * (1 - scaleChange)
-    const scaleChange = newScale / app.scale;
-    
-    app.offsetX = app.offsetX + beforeX * (1 - scaleChange);
-    app.offsetY = app.offsetY + beforeY * (1 - scaleChange);
-    app.scale   = newScale;
+    // La diferencia es cuánto se movió → lo compensamos con translate
+    app.offsetX += pointBeforeX - pointAfterX;
+    app.offsetY += pointBeforeY - pointAfterY;
+    app.scale = newScale;
     
     applyTransform();
 }
 
 function applyTransform() {
-    const transform = `translate(${app.offsetX}px, ${app.offsetY}px) scale(${app.scale})`;
+    const t = `translate(${app.offsetX}px, ${app.offsetY}px) scale(${app.scale})`;
     [app.bgCanvas, app.referenceCanvas, app.canvas].forEach(c => {
-        c.style.transformOrigin = '50% 50%';  // siempre desde el centro
-        c.style.transform = transform;
+        c.style.transformOrigin = '0 0';  // crucial: origen en esquina superior izquierda
+        c.style.transform = t;
     });
 }
 
