@@ -818,6 +818,7 @@ button {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    touch-action: none;   /* evita que el navegador intercepte pinch/scroll */
 }
 
 .canvas-wrapper {
@@ -827,8 +828,10 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Fondo oscuro — el blanco del lienzo viene del canvas #bg-canvas */
     background: transparent;
+    touch-action: none; 
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* Tres canvas apilados: fondo → referencia → dibujo */
@@ -837,12 +840,12 @@ button {
 #drawing-canvas {
     position: absolute;
     border-radius: 8px;
-    /* El tamaño visual se aplica por JS; aquí solo declaramos position */
+    touch-action: none;   /* crítico: sin esto el navegador captura el pinch */
 }
 
 #bg-canvas {
     z-index: 0;
-    background: #ffffff; /* Fondo blanco visible del lienzo */
+    background: #ffffff;
     box-shadow: var(--shadow-lg);
     pointer-events: none;
 }
@@ -850,12 +853,11 @@ button {
 #reference-canvas {
     z-index: 1;
     pointer-events: none;
-    /* Sin fondo — solo los trazos de referencia */
 }
 
 #drawing-canvas {
     z-index: 2;
-    background: transparent; /* Transparente → se ven referencia y fondo */
+    background: transparent;
     cursor: crosshair;
     box-shadow: var(--shadow-lg);
 }
