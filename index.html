@@ -3,27 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NeonDraw v2.0 - Dibujo Colaborativo</title>
+    <meta name="description" content="NeonDraw: Plataforma de dibujo colaborativo en tiempo real con estética neón. Crea salas, dibuja con amigos y comparte tu arte.">
+    <meta name="theme-color" content="#0a0a0f">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="NeonDraw - Dibujo Colaborativo en Tiempo Real">
+    <meta property="og:description" content="Únete a una sala y dibuja con amigos en tiempo real con herramientas profesionales y estética neón.">
+    <meta property="og:image" content="assets/og-image.jpg">
+
+    <title>NeonDraw - Dibujo Colaborativo</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Pantalla de carga inicial -->
     <div id="loading-screen" class="loading-screen">
         <div class="loading-content">
             <div class="logo-container">
                 <h1 class="app-title">NEON<span>DRAW</span></h1>
                 <div class="loading-spinner"></div>
             </div>
-            <p class="loading-text">Conectando al espacio colaborativo...</p>
+            <p class="loading-text">Iniciando entorno creativo...</p>
         </div>
     </div>
 
-    <!-- Aplicación principal -->
     <div id="app" class="app-container" style="display: none;">
-        <!-- Header superior -->
         <header class="app-header">
             <div class="header-left">
-                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Abrir menú">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
                     </svg>
@@ -38,15 +43,15 @@
             <div class="header-center">
                 <div class="room-info">
                     <span class="room-label">SALA:</span>
-                    <input type="text" id="room-id" class="room-input" placeholder="Ingresa código de sala" maxlength="20">
+                    <input type="text" id="room-id" class="room-input" placeholder="Código de sala" maxlength="20">
                     <button id="join-room-btn" class="btn-primary">Unirse</button>
                     <button id="create-room-btn" class="btn-secondary">Crear Sala</button>
-                    <button id="leave-room-btn" class="btn-danger-outline" style="display: none;">Salir de Sala</button>
+                    <button id="leave-room-btn" class="btn-danger-outline" style="display: none;">Salir</button>
                 </div>
             </div>
 
             <div class="header-right">
-                <div class="users-online">
+                <div class="users-online" title="Usuarios en línea">
                     <svg class="user-icon" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
@@ -55,35 +60,27 @@
             </div>
         </header>
 
-        <!-- Overlay del toolbar móvil -->
         <div class="toolbar-overlay" id="toolbar-overlay"></div>
 
-        <!-- Contenedor principal con sidebar y canvas -->
         <main class="main-content">
-            <!-- Sidebar de herramientas -->
             <aside class="toolbar" id="toolbar">
                 <div class="toolbar-section">
                     <h3 class="toolbar-title">HERRAMIENTAS</h3>
                     
-                    <!-- Selector de color -->
                     <div class="tool-group">
                         <label class="tool-label">Color</label>
                         <div class="color-picker-container">
                             <input type="color" id="color-picker" class="color-input" value="#00ff88">
                             <div class="color-preview" id="color-preview"></div>
                         </div>
-                        <div class="preset-colors" id="preset-colors">
-                            <!-- Se llenarán dinámicamente con JavaScript -->
-                        </div>
+                        <div class="preset-colors" id="preset-colors"></div>
                         
-                        <!-- Paletas personalizadas -->
                         <div class="custom-palettes">
                             <label class="tool-label">Paletas</label>
                             <div id="palettes-list"></div>
                         </div>
                     </div>
 
-                    <!-- Control de tamaño de pincel -->
                     <div class="tool-group">
                         <label class="tool-label">Tamaño del Pincel</label>
                         <input type="range" id="brush-size" class="slider" min="1" max="50" value="3">
@@ -93,57 +90,39 @@
                         <span id="brush-size-value" class="value-display">3px</span>
                     </div>
 
-                    <!-- Modo de dibujo -->
                     <div class="tool-group">
                         <label class="tool-label">Modo</label>
                         <div class="mode-buttons">
                             <button id="draw-mode" class="mode-btn active">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                </svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 Dibujar
                             </button>
                             <button id="eraser-mode" class="mode-btn">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0M4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53-6.36-6.36-3.54 3.53Z"/>
-                                </svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.24 3.56l4.95 4.94c.78.79.78 2.05 0 2.84L12 20.53a4.008 4.008 0 0 1-5.66 0L2.81 17c-.78-.79-.78-2.05 0-2.84l10.6-10.6c.79-.78 2.05-.78 2.83 0M4.22 15.58l3.54 3.53c.78.79 2.04.79 2.83 0l3.53-3.53-6.36-6.36-3.54 3.53Z"/></svg>
                                 Borrador
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Imagen de referencia -->
                 <div class="toolbar-section">
                     <h3 class="toolbar-title">REFERENCIA</h3>
-                    
                     <input type="file" id="reference-upload" class="reference-upload" accept="image/*">
                     
                     <button id="upload-reference-btn" class="reference-btn">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:5px;"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
                         Subir Imagen
                     </button>
-                    
                     <button id="load-url-reference-btn" class="reference-btn">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:5px;"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
                         Cargar por URL
                     </button>
-                    
                     <button id="gallery-reference-btn" class="reference-btn">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:5px;"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
                         Galería
                     </button>
-                    
                     <button id="clear-reference-btn" class="reference-btn" disabled>
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:5px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                         Quitar Referencia
                     </button>
                     
@@ -153,36 +132,26 @@
                         <span id="reference-opacity-value" class="value-display">50%</span>
                     </div>
                     
-                    <div class="reference-presets" id="reference-presets">
-                        <!-- Referencias predeterminadas se generan con JS -->
-                    </div>
+                    <div class="reference-presets" id="reference-presets"></div>
                 </div>
 
-                <!-- Sección de acciones -->
                 <div class="toolbar-section">
                     <h3 class="toolbar-title">ACCIONES</h3>
                     <button id="clear-canvas-btn" class="btn-danger">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:5px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                         Limpiar Lienzo
                     </button>
-                    
                     <button id="download-btn" class="btn-secondary">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
-                        </svg>
-                        Descargar
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;margin-right:5px;"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                        Descargar Arte
                     </button>
                 </div>
 
-                <!-- Decoración lateral -->
                 <div class="sidebar-decoration">
                     <div class="neon-line"></div>
                 </div>
             </aside>
 
-            <!-- Canvas de dibujo -->
             <section class="canvas-container">
                 <div class="canvas-wrapper">
                     <canvas id="bg-canvas"></canvas>
@@ -194,26 +163,23 @@
                         <svg class="overlay-icon" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
-                        <h2>Únete a una sala para comenzar</h2>
-                        <p>Crea una nueva sala o ingresa el código de una existente</p>
+                        <h2>Crea o únete a una sala</h2>
+                        <p>Ingresa un código para comenzar a colaborar</p>
                     </div>
                 </div>
             </section>
         </main>
 
-        <!-- Notificaciones toast -->
         <div id="toast-container" class="toast-container"></div>
         
-        <!-- Modal para URL de imagen -->
         <div id="url-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Cargar Imagen por URL</h2>
+                    <h2>Imagen por URL</h2>
                     <button class="modal-close" id="close-url-modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <label for="image-url-input">URL de la imagen:</label>
-                    <input type="text" id="image-url-input" class="modal-input" placeholder="https://ejemplo.com/imagen.jpg">
+                    <input type="text" id="image-url-input" class="modal-input" placeholder="https://...">
                 </div>
                 <div class="modal-footer">
                     <button id="load-url-btn" class="btn-primary">Cargar</button>
@@ -222,23 +188,19 @@
             </div>
         </div>
         
-        <!-- Modal para galería de imágenes -->
         <div id="gallery-modal" class="modal">
             <div class="modal-content modal-large">
                 <div class="modal-header">
-                    <h2>Galería de Referencias</h2>
+                    <h2>Galería</h2>
                     <button class="modal-close" id="close-gallery-modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div id="gallery-grid" class="gallery-grid">
-                        <!-- Se cargan dinámicamente -->
-                    </div>
+                    <div id="gallery-grid" class="gallery-grid"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts de Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="app.js"></script>
